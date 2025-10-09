@@ -38,6 +38,9 @@ namespace LineUpSeries
                         bool vsAI = argsRest.Length > 3 ? argsRest[3].Equals("ai", StringComparison.OrdinalIgnoreCase) : false;
                         var winRule = new ConnectWinRule(win);
                         IAIStrategy ai = new ImmediateWinOrRandomAIStrategy(winRule, 2);
+                        // set players: P1 human, P2 human/AI depending on mode
+                        Player.SetPlayer1(new HumanPlayer(1));
+                        Player.SetPlayer2(vsAI ? new ComputerPlayer(2, ai) : new HumanPlayer(2));
                         currentGame = new LineUpClassic(new Board(rows, cols), Player.Player1, winRule, ai, vsAI);
                         currentGame.StartGameLoop();
                         currentGame = null;

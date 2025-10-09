@@ -6,12 +6,13 @@ using System.Threading.Tasks;
 
 namespace LineUpSeries
 {
-    public class Player
+    public abstract class Player
     {
         public int PlayerId { get; }
         public Dictionary<DiscKind, int> Inventory { get; }
+        public virtual bool IsComputer => false;
 
-        private Player(int id)
+        protected Player(int id)
         {
             PlayerId = id;
             Inventory = new Dictionary<DiscKind, int>();
@@ -21,8 +22,11 @@ namespace LineUpSeries
             }
         }
 
-        public static Player Player1 { get; } = new Player(1);
-        public static Player Player2 { get; } = new Player(2);
+        public static Player Player1 { get; private set; } = new HumanPlayer(1);
+        public static Player Player2 { get; private set; } = new HumanPlayer(2);
+
+        public static void SetPlayer1(Player p) => Player1 = p;
+        public static void SetPlayer2(Player p) => Player2 = p;
 
         public bool CanUse(DiscKind kind)
         {
@@ -52,6 +56,22 @@ namespace LineUpSeries
             {
                 Inventory[kv.Key] = kv.Value;
             }
+        }
+    }
+
+    public sealed class HumanPlayer : Player
+    {
+        public override bool IsComputer => false;
+        public HumanPlayer(int id) : base(id) {}
+    }
+
+    public sealed class ComputerPlayer : Player
+    {
+        public override bool IsComputer => true;
+        public IAIStrategy Strategy { get; }
+        public ComputerPlayer(int id, IAIStrategy strategy) : base(id)
+        {
+            Strategy = strategy;
         }
     }
 }
