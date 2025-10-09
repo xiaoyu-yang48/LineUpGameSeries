@@ -79,7 +79,7 @@ namespace LineUpSeries
                 return;
             }
 
-            var move = new PlaceDiscMove(col, FileManager.CreateDisc(kindToUse, playerId));
+            var move = new PlaceDiscMove(col, DiscRegistry.CreateDisc(kindToUse, playerId));
             move.Execute(Board);
             Board.ApplyGravity();
 
@@ -277,10 +277,10 @@ namespace LineUpSeries
         {
             void Reset(Player p)
             {
-                p.Inventory[DiscKind.Ordinary] = 42;
-                p.Inventory[DiscKind.Boring] = 0;
-                p.Inventory[DiscKind.Magnetic] = 0;
-                p.Inventory[DiscKind.Explosive] = 0;
+                foreach (var k in DiscRegistry.GetAllKinds())
+                {
+                    p.Inventory[k] = DiscRegistry.GetDefaultStock(k);
+                }
             }
             Reset(Player.Player1);
             Reset(Player.Player2);

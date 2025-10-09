@@ -121,13 +121,7 @@ namespace LineUpSeries
 
         public static Disc CreateDisc(DiscKind kind, int playerId)
         {
-            return kind switch
-            {
-                DiscKind.Boring => new BoringDisc(playerId),
-                DiscKind.Magnetic => new MagneticDisc(playerId),
-                DiscKind.Explosive => new ExplosiveDisc(playerId),
-                _ => new OrdinaryDisc(playerId)
-            };
+            return DiscRegistry.CreateDisc(kind, playerId);
         }
 
         private static void RestoreInv(Player player, Dictionary<string, int> inv)

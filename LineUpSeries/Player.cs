@@ -14,13 +14,11 @@ namespace LineUpSeries
         private Player(int id)
         {
             PlayerId = id;
-            Inventory = new Dictionary<DiscKind, int>
+            Inventory = new Dictionary<DiscKind, int>();
+            foreach (var k in DiscRegistry.GetAllKinds())
             {
-                { DiscKind.Ordinary, 42 },
-                { DiscKind.Boring, 0 },
-                { DiscKind.Magnetic, 0 },
-                { DiscKind.Explosive, 0 }
-            };
+                Inventory[k] = DiscRegistry.GetDefaultStock(k);
+            }
         }
 
         public static Player Player1 { get; } = new Player(1);

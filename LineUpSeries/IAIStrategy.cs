@@ -49,7 +49,7 @@ namespace LineUpSeries
                 int row = FirstEmptyRow(board, c);
                 if (row < 0) continue;
                 var cell = board.Cells[row][c];
-                cell.Disc = new OrdinaryDisc(_aiPlayerId);
+                cell.Disc = DiscRegistry.CreateDisc(DiscKind.Ordinary, _aiPlayerId);
                 bool win = _winRule.CheckCellWin(board, cell);
                 cell.Disc = null; // revert
                 if (win) return c;
