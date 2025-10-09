@@ -91,5 +91,22 @@ namespace LineUpSeries
             }
             return true;
         }
+
+        public Board Clone()
+        {
+            var clone = new Board(Rows, Cols);
+            for (int r = 0; r < Rows; r++)
+            {
+                for (int c = 0; c < Cols; c++)
+                {
+                    var disc = Cells[r][c].Disc;
+                    if (disc != null)
+                    {
+                        clone.Cells[r][c].Disc = DiscFactory.Create(disc.Kind, disc.PlayerId);
+                    }
+                }
+            }
+            return clone;
+        }
     }
 }

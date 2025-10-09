@@ -55,14 +55,16 @@ namespace LineUpSeries
             for (int c = 0; c < board.Cols; c++)
             {
                 if (!board.IsLegalMove(c)) continue;
-                int row = FirstEmptyRow(board, c);
-                if (row < 0) continue;
-                var cell = board.Cells[row][c];
                 foreach (var kind in availableKinds)
                 {
-                    cell.Disc = DiscFactory.Create(kind, _aiPlayerId);
-                    bool win = _winRule.CheckCellWin(board, cell);
-                    cell.Disc = null; // revert
+                    var simBoard = board.Clone();
+                    var move = new PlaceDiscMove(c, DiscFactory.Create(kind, _aiPlayerId));
+                    move.Execute(simBoard);
+                    simBoard.ApplyGravity();
+                    bool p1, p2;
+                    ( _winRule as ConnectWinRule ?? new ConnectWinRule(4) )
+                        .WinCheck(simBoard, move.ChangeCells, out p1, out p2);
+                    bool win = (_aiPlayerId == 1 ? p1 : p2);
                     if (win)
                     {
                         LastChosenDiscKind = kind;
@@ -97,13 +99,6 @@ namespace LineUpSeries
             return legal[_random.Next(legal.Count)];
         }
 
-        private static int FirstEmptyRow(Board board, int col)
-        {
-            for (int r = 0; r < board.Rows; r++)
-            {
-                if (board.Cells[r][col].Disc == null) return r;
-            }
-            return -1;
-        }
+        // no need to compute first empty row with simulation approach
     }
 }
