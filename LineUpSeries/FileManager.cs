@@ -22,6 +22,8 @@ namespace LineUpSeries
             public int CurrentPlayerId { get; set; }
             public bool VsAI { get; set; }
             public CellSave[][] Cells { get; set; } = Array.Empty<CellSave[]>();
+            public Dictionary<string, int> P1Inv { get; set; } = new();
+            public Dictionary<string, int> P2Inv { get; set; } = new();
         }
 
         public static void Save(string path, Board board, int winLen, int currentPlayerId, bool vsAI)
@@ -48,6 +50,16 @@ namespace LineUpSeries
                         Kind = disc?.Kind.ToString() ?? nameof(DiscKind.Ordinary)
                     };
                 }
+            }
+
+            // inventories
+            foreach (var kv in Player.Player1.Inventory)
+            {
+                save.P1Inv[kv.Key.ToString()] = kv.Value;
+            }
+            foreach (var kv in Player.Player2.Inventory)
+            {
+                save.P2Inv[kv.Key.ToString()] = kv.Value;
             }
 
             var json = System.Text.Json.JsonSerializer.Serialize(save, new System.Text.Json.JsonSerializerOptions
@@ -87,6 +99,15 @@ namespace LineUpSeries
                 }
             }
             board.ApplyGravity();
+            // restore inventories if present
+            if (save.P1Inv != null)
+            {
+                RestoreInv(Player.Player1, save.P1Inv);
+            }
+            if (save.P2Inv != null)
+            {
+                RestoreInv(Player.Player2, save.P2Inv);
+            }
         }
 
         public static Disc CreateDisc(string kind, int playerId)
@@ -107,6 +128,17 @@ namespace LineUpSeries
                 DiscKind.Explosive => new ExplosiveDisc(playerId),
                 _ => new OrdinaryDisc(playerId)
             };
+        }
+
+        private static void RestoreInv(Player player, Dictionary<string, int> inv)
+        {
+            foreach (var kv in inv)
+            {
+                if (Enum.TryParse<DiscKind>(kv.Key, out var kind))
+                {
+                    player.Inventory[kind] = kv.Value;
+                }
+            }
         }
     }
 }

@@ -36,7 +36,9 @@ namespace LineUpSeries
                         int cols = argsRest.Length > 1 && int.TryParse(argsRest[1], out var c) ? c : 7;
                         int win = argsRest.Length > 2 && int.TryParse(argsRest[2], out var w) ? w : 4;
                         bool vsAI = argsRest.Length > 3 ? argsRest[3].Equals("ai", StringComparison.OrdinalIgnoreCase) : false;
-                        currentGame = new LineUpClassic(new Board(rows, cols), Player.Player1, new ConnectWinRule(win), new RandomAIStrategy(), vsAI);
+                        var winRule = new ConnectWinRule(win);
+                        IAIStrategy ai = new ImmediateWinOrRandomAIStrategy(winRule, 2);
+                        currentGame = new LineUpClassic(new Board(rows, cols), Player.Player1, winRule, ai, vsAI);
                         currentGame.StartGameLoop();
                         currentGame = null;
                         break;

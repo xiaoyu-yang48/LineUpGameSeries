@@ -26,6 +26,7 @@ namespace LineUpSeries
             _gameOver = false;
             _player1Win = false;
             _player2Win = false;
+            ResetInventoryForNewGame();
             Console.WriteLine($"Game: {Name} | {Board.Rows}x{Board.Cols}, win {WinLen}");
             PrintHelp();
             PrintBoard();
@@ -67,7 +68,18 @@ namespace LineUpSeries
                 return;
             }
 
-            var move = new PlaceDiscMove(col, FileManager.CreateDisc(_currentDiscKind, playerId));
+            // decide piece kind per side (AI uses Ordinary by default)
+            var kindToUse = (playerId == 2 && _vsAI) ? DiscKind.Ordinary : _currentDiscKind;
+
+            // check inventory
+            var player = playerId == 1 ? Player.Player1 : Player.Player2;
+            if (!player.TryConsume(kindToUse))
+            {
+                Console.WriteLine($"No stock for piece kind '{kindToUse}'. Use 'piece <kind>' or restock.");
+                return;
+            }
+
+            var move = new PlaceDiscMove(col, FileManager.CreateDisc(kindToUse, playerId));
             move.Execute(Board);
             Board.ApplyGravity();
 
@@ -144,6 +156,9 @@ namespace LineUpSeries
                 case "board":
                     PrintBoard();
                     return true;
+                case "stock":
+                    PrintStock();
+                    return true;
                 case "quit":
                     _gameOver = true;
                     return true;
@@ -203,12 +218,28 @@ namespace LineUpSeries
                 }
                 return true;
             }
+            if (lower.StartsWith("restock "))
+            {
+                // restock <kind> <amount> (debug/assist tool)
+                var parts = input.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length >= 3 && Enum.TryParse<DiscKind>(parts[1], true, out var k) && int.TryParse(parts[2], out var amt))
+                {
+                    var p = CurrentPlayer.PlayerId == 1 ? Player.Player1 : Player.Player2;
+                    p.AddStock(k, amt);
+                    Console.WriteLine($"Player {p.PlayerId} stock {k} += {amt}");
+                }
+                else
+                {
+                    Console.WriteLine("Usage: restock <kind> <amount>");
+                }
+                return true;
+            }
             return false;
         }
 
         private void PrintHelp()
         {
-            Console.WriteLine("Commands: [number]=drop column | help | board | piece <kind> | save <file> | load <file> | quit");
+            Console.WriteLine("Commands: [number]=drop column | help | board | stock | piece <kind> | restock <kind> <amount> | save <file> | load <file> | quit");
         }
 
         private void PrintBoard()
@@ -224,6 +255,35 @@ namespace LineUpSeries
                 }
                 Console.WriteLine();
             }
+        }
+
+        private void PrintStock()
+        {
+            void Print(Player p)
+            {
+                Console.Write($"P{p.PlayerId} stock: ");
+                foreach (DiscKind k in Enum.GetValues(typeof(DiscKind)))
+                {
+                    p.Inventory.TryGetValue(k, out var cnt);
+                    Console.Write($"{k}={cnt} ");
+                }
+                Console.WriteLine();
+            }
+            Print(Player.Player1);
+            Print(Player.Player2);
+        }
+
+        private void ResetInventoryForNewGame()
+        {
+            void Reset(Player p)
+            {
+                p.Inventory[DiscKind.Ordinary] = 42;
+                p.Inventory[DiscKind.Boring] = 0;
+                p.Inventory[DiscKind.Magnetic] = 0;
+                p.Inventory[DiscKind.Explosive] = 0;
+            }
+            Reset(Player.Player1);
+            Reset(Player.Player2);
         }
     }
 }
