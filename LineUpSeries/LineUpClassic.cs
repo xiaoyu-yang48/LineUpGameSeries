@@ -46,18 +46,13 @@ namespace LineUpSeries
         {
             if (CurrentPlayer == Player.Player2 && _vsAI)
             {
-                int aiCol = AiStrategy.ChooseMove(Board);
-                if (aiCol < 0)
+                var aiMove = AiStrategy.PickMove(Board);
+                if (aiMove == null)
                 {
                     _gameOver = true;
                     return;
                 }
-                // If AI strategy suggests a piece kind, adopt it for this move
-                if (AiStrategy is ImmediateWinOrRandomAIStrategy smart)
-                {
-                    _currentDiscKind = smart.LastChosenDiscKind;
-                }
-                ApplyMove(aiCol, CurrentPlayer.PlayerId);
+                ApplyMove(aiMove.Column, CurrentPlayer.PlayerId, aiMove.Disc.Kind);
                 return;
             }
 
@@ -70,19 +65,16 @@ namespace LineUpSeries
                 Console.WriteLine("Invalid input. Type 'help' for commands.");
                 return;
             }
-            ApplyMove(col, CurrentPlayer.PlayerId);
+            ApplyMove(col, CurrentPlayer.PlayerId, _currentDiscKind);
         }
 
-        private void ApplyMove(int col, int playerId)
+        private void ApplyMove(int col, int playerId, DiscKind kindToUse)
         {
             if (!Board.IsColumnLegal(col))
             {
                 Console.WriteLine("Illegal move: column full or out of range.");
                 return;
             }
-
-            // decide piece kind per side (AI sets this before ApplyMove via strategy)
-            var kindToUse = _currentDiscKind;
 
             // disc legality (inventory)
             var player = playerId == 1 ? Player.Player1 : Player.Player2;

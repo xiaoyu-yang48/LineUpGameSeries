@@ -8,22 +8,29 @@ namespace LineUpSeries
 {
     public interface IAIStrategy
     {
-        int ChooseMove(Board board);
+        PlaceDiscMove? PickMove(Board board);
     }
 
     public sealed class RandomAIStrategy : IAIStrategy
     {
         private readonly Random _random = new Random();
 
-        public int ChooseMove(Board board)
+        public PlaceDiscMove? PickMove(Board board)
         {
             var legal = new List<int>();
             for (int c = 0; c < board.Cols; c++)
             {
                 if (board.IsColumnLegal(c)) legal.Add(c);
             }
-            if (legal.Count == 0) return -1;
-            return legal[_random.Next(legal.Count)];
+            if (legal.Count == 0) return null;
+            int col = legal[_random.Next(legal.Count)];
+            // choose first legal disc kind
+            foreach (DiscKind kind in Enum.GetValues(typeof(DiscKind)))
+            {
+                var disc = DiscFactory.Create(kind, 2);
+                if (board.IsDiscLegal(disc)) return new PlaceDiscMove(col, disc);
+            }
+            return null;
         }
     }
 
@@ -41,7 +48,7 @@ namespace LineUpSeries
             _aiPlayerId = aiPlayerId;
         }
 
-        public int ChooseMove(Board board)
+        public PlaceDiscMove? PickMove(Board board)
         {
             var aiPlayer = _aiPlayerId == 1 ? Player.Player1 : Player.Player2;
 
@@ -64,7 +71,7 @@ namespace LineUpSeries
                     if (win)
                     {
                         LastChosenDiscKind = kind;
-                        return c;
+                        return new PlaceDiscMove(c, DiscFactory.Create(kind, _aiPlayerId));
                     }
                 }
             }
@@ -75,7 +82,7 @@ namespace LineUpSeries
             {
                 if (board.IsColumnLegal(c)) legal.Add(c);
             }
-            if (legal.Count == 0) return -1;
+            if (legal.Count == 0) return null;
 
             // 2.1) choose a piece kind for fallback: prefer Ordinary if available else first available
             if (aiPlayer.Inventory.TryGetValue(DiscKind.Ordinary, out var ordinaryCnt) && ordinaryCnt > 0)
@@ -103,7 +110,10 @@ namespace LineUpSeries
                 }
             }
 
-            return legal[_random.Next(legal.Count)];
+            int pickedCol = legal[_random.Next(legal.Count)];
+            var pickedDisc = DiscFactory.Create(LastChosenDiscKind, _aiPlayerId);
+            if (!board.IsDiscLegal(pickedDisc)) return null;
+            return new PlaceDiscMove(pickedCol, pickedDisc);
         }
 
         // no need to compute first empty row with simulation approach
