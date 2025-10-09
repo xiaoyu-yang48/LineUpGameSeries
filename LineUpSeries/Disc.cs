@@ -66,7 +66,6 @@ namespace LineUpSeries
                     if (board.InBounds(r, c))
                     {
                         board.Cells[r][c].Disc = null;
-                        changeCells.Add(board.Cells[r][c]);
                     }
                 }
             }
