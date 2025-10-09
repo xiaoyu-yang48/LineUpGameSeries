@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -31,7 +31,7 @@ namespace LineUpSeries
 
         public Cell GetCell(int row, int col)
         {
-            if (InBounds(row, col)) throw new ArgumentOutOfRangeException();
+            if (!InBounds(row, col)) throw new ArgumentOutOfRangeException();
             return Cells[row][col];
         }
 
@@ -81,6 +81,15 @@ namespace LineUpSeries
         //rotate clockwise
         public void RotateCW()
         {
+        }
+
+        public bool IsFull()
+        {
+            for (int c = 0; c < Cols; c++)
+            {
+                if (IsLegalMove(c)) return false;
+            }
+            return true;
         }
     }
 }

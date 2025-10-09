@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -13,15 +13,16 @@ namespace LineUpSeries
         public Player CurrentPlayer { get; private set; } = Player.Player1;
 
         protected readonly IWinRule WinRule;
-        protected readonly IAISrategy AiSrategy;
+        protected readonly IAIStrategy AiStrategy;
         public int WinLen => WinRule.WinLen;
+        public abstract string Name { get; }
 
-        protected Game (Board board, Player currentPlayer, IWinRule winRule, IAISrategy aiSrategy)
+        protected Game (Board board, Player currentPlayer, IWinRule winRule, IAIStrategy aiStrategy)
         {
             Board = board;
             CurrentPlayer = currentPlayer;
             WinRule = winRule;
-            AiSrategy = aiSrategy;
+            AiStrategy = aiStrategy;
         }
 
         //Template Pattern - Main game loop template - reference kehao-liu assignment 1
@@ -52,6 +53,16 @@ namespace LineUpSeries
             {
                 Console.WriteLine($"Players 1 and 2 both aligned this turn. It's a draw!");
             }
+        }
+
+        protected virtual void InitializeGameLoop() {}
+        protected virtual bool EndGame() => true;
+        protected virtual void ExecuteGameTurn() {}
+        protected virtual void DisplayGameResult() {}
+
+        protected void SwitchPlayer()
+        {
+            CurrentPlayer = CurrentPlayer == Player.Player1 ? Player.Player2 : Player.Player1;
         }
     }
 }

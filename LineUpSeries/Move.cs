@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,7 +8,7 @@ namespace LineUpSeries
 {
     public abstract class Move
     {
-        public List<Cell> ChangeCells = new List<Cell>();
+        public ChangeCell ChangeCells = new ChangeCell();
 
         public abstract void Execute(Board board);
         public abstract void Unexecute(Board board);
@@ -31,8 +31,16 @@ namespace LineUpSeries
             RowPlaced = board.PlaceDisc(Col, Disc);
             if (RowPlaced < 0) return;
 
-            ChangeCells.Clear();
+            ChangeCells = new ChangeCell();
             Disc.OnPlaced(board, RowPlaced, Col, ChangeCells);
+        }
+
+        public override void Unexecute(Board board)
+        {
+            if (RowPlaced < 0) return;
+            // Remove placed disc and re-apply gravity to restore state approximately
+            board.Cells[RowPlaced][Col].Disc = null;
+            board.ApplyGravity();
         }
     }
 }
