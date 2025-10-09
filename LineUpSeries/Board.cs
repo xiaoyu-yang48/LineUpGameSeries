@@ -45,8 +45,8 @@ namespace LineUpSeries
         {
             if (disc == null) return false;
             if (disc.PlayerId != 1 && disc.PlayerId != 2) return false;
-            // other future constraints for special discs can be added here
-            return true;
+            var player = disc.PlayerId == 1 ? Player.Player1 : Player.Player2;
+            return player.CanUse(disc.Kind);
         }
 
         //place a disc into a column
