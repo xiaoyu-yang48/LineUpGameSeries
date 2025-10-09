@@ -12,7 +12,7 @@ namespace LineUpSeries
         public int Col { get; }
 
         public Disc? Disc { get; set; }
-        public int Owner { get; set; }
+        public int Owner => Disc?.PlayerId ?? 0;
         public bool IsEmpty => Disc == null;
 
         public Cell(int row, int col)
@@ -20,7 +20,6 @@ namespace LineUpSeries
             Row = row;
             Col = col;
             Disc = null;
-            Owner = 0;
         }
     }
 }

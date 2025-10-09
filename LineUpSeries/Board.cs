@@ -59,7 +59,7 @@ namespace LineUpSeries
         //apply gravity to whole board
         public void ApplyGravity()
         {
-            for (int c = 0; c <= Cols; c++)
+            for (int c = 0; c < Cols; c++)
             {
                 int nextFillRow = 0;
                 for (int r = 0; r < Rows; r++)
@@ -72,6 +72,7 @@ namespace LineUpSeries
                             Cells[nextFillRow][c].Disc = disc;
                             Cells[r][c].Disc = null;
                         }
+                        nextFillRow++;
                     }
                 }
             }

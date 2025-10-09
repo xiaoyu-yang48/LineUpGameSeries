@@ -12,7 +12,11 @@ namespace LineUpSeries
         public abstract DiscKind Kind { get; }
 
         //owner id
-        public int DiscOwner { get; }
+        public int PlayerId { get; }
+        public Disc(int playerId)
+        {
+            PlayerId = playerId;
+        }
 
         // hook for special disc behavior
         public virtual void OnPlaced(Board board, int row, int col) { }
