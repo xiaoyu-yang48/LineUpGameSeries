@@ -16,31 +16,31 @@ namespace LineUpSeries
 
     public class PlaceDiscMove : Move 
     {
-        private int Col { get; }
-        private Disc Disc { get; }
+        public int Column { get; }
+        public Disc Disc { get; }
         private int RowPlaced { get; set; } = -1;
         public bool WasPlaced => RowPlaced >= 0;
 
         public PlaceDiscMove(int col, Disc disc)
         {
-            Col = col;
+            Column = col;
             Disc = disc;
         }
 
         public override void Execute(Board board)
         {
-            RowPlaced = board.PlaceDisc(Col, Disc);
+            RowPlaced = board.PlaceDisc(Column, Disc);
             if (RowPlaced < 0) return;
 
             ChangeCells = new ChangeCell();
-            Disc.OnPlaced(board, RowPlaced, Col, ChangeCells);
+            Disc.OnPlaced(board, RowPlaced, Column, ChangeCells);
         }
 
         public override void Unexecute(Board board)
         {
             if (RowPlaced < 0) return;
             // Remove placed disc and re-apply gravity to restore state approximately
-            board.Cells[RowPlaced][Col].Disc = null;
+            board.Cells[RowPlaced][Column].Disc = null;
             board.ApplyGravity();
         }
     }
