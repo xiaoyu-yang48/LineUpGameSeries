@@ -26,7 +26,8 @@ namespace LineUpSeries
             _gameOver = false;
             _player1Win = false;
             _player2Win = false;
-            ResetInventoryForNewGame();
+            DiscRegistry.ApplyProfile(Player.Player1, GameVariant.Classic);
+            DiscRegistry.ApplyProfile(Player.Player2, GameVariant.Classic);
             Console.WriteLine($"Game: {Name} | {Board.Rows}x{Board.Cols}, win {WinLen}");
             PrintHelp();
             PrintBoard();
@@ -273,17 +274,6 @@ namespace LineUpSeries
             Print(Player.Player2);
         }
 
-        private void ResetInventoryForNewGame()
-        {
-            void Reset(Player p)
-            {
-                foreach (var k in DiscRegistry.GetAllKinds())
-                {
-                    p.Inventory[k] = DiscRegistry.GetDefaultStock(k);
-                }
-            }
-            Reset(Player.Player1);
-            Reset(Player.Player2);
-        }
+        
     }
 }

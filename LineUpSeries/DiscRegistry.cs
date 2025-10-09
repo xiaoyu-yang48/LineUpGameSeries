@@ -14,12 +14,39 @@ namespace LineUpSeries
             { DiscKind.Explosive,playerId => new ExplosiveDisc(playerId) },
         };
 
-        private static readonly Dictionary<DiscKind, int> DefaultStock = new()
+        // Variant-specific default stock profiles
+        private static readonly Dictionary<GameVariant, Dictionary<DiscKind, int>> VariantStock = new()
         {
-            { DiscKind.Ordinary, 42 },
-            { DiscKind.Boring, 0 },
-            { DiscKind.Magnetic, 0 },
-            { DiscKind.Explosive, 0 },
+            {
+                GameVariant.Classic,
+                new Dictionary<DiscKind, int>
+                {
+                    { DiscKind.Ordinary, 42 },
+                    { DiscKind.Boring, 0 },
+                    { DiscKind.Magnetic, 0 },
+                    { DiscKind.Explosive, 0 },
+                }
+            },
+            {
+                GameVariant.Basic,
+                new Dictionary<DiscKind, int>
+                {
+                    { DiscKind.Ordinary, 42 },
+                    { DiscKind.Boring, 0 },
+                    { DiscKind.Magnetic, 0 },
+                    { DiscKind.Explosive, 0 },
+                }
+            },
+            {
+                GameVariant.Spin,
+                new Dictionary<DiscKind, int>
+                {
+                    { DiscKind.Ordinary, 42 },
+                    { DiscKind.Boring, 0 },
+                    { DiscKind.Magnetic, 0 },
+                    { DiscKind.Explosive, 0 },
+                }
+            }
         };
 
         public static Disc CreateDisc(DiscKind kind, int playerId)
@@ -36,7 +63,24 @@ namespace LineUpSeries
 
         public static int GetDefaultStock(DiscKind kind)
         {
-            return DefaultStock.TryGetValue(kind, out var count) ? count : 0;
+            return GetDefaultStock(kind, GameVariant.Classic);
+        }
+
+        public static int GetDefaultStock(DiscKind kind, GameVariant variant)
+        {
+            if (VariantStock.TryGetValue(variant, out var stock) && stock.TryGetValue(kind, out var count))
+            {
+                return count;
+            }
+            return 0;
+        }
+
+        public static void ApplyProfile(Player player, GameVariant variant)
+        {
+            foreach (var k in GetAllKinds())
+            {
+                player.Inventory[k] = GetDefaultStock(k, variant);
+            }
         }
 
         public static string KindListString()

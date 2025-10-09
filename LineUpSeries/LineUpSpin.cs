@@ -11,5 +11,11 @@ namespace LineUpSeries
         public override string Name => "LineUpSpin";
         public LineUpSpin(Board board, Player currentPlayer, IWinRule winRule, IAIStrategy aiStrategy)
             : base(board, currentPlayer, winRule, aiStrategy) {}
+
+        protected override void InitializeGameLoop()
+        {
+            DiscRegistry.ApplyProfile(Player.Player1, GameVariant.Spin);
+            DiscRegistry.ApplyProfile(Player.Player2, GameVariant.Spin);
+        }
     }
 }
