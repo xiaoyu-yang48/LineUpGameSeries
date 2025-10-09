@@ -9,14 +9,15 @@ namespace LineUpSeries
     // template pattern
     public abstract class Game
     {
+        public abstract string Name { get; }
         public Board Board { get; }
         public Player CurrentPlayer { get; private set; } = Player.Player1;
 
         protected readonly IWinRule WinRule;
-        protected readonly IAISrategy AiSrategy;
+        protected readonly IAIStrategy AiSrategy;
         public int WinLen => WinRule.WinLen;
 
-        protected Game (Board board, Player currentPlayer, IWinRule winRule, IAISrategy aiSrategy)
+        protected Game (Board board, Player currentPlayer, IWinRule winRule, IAIStrategy aiSrategy)
         {
             Board = board;
             CurrentPlayer = currentPlayer;
@@ -35,6 +36,16 @@ namespace LineUpSeries
             }
 
             DisplayGameResult();
+        }
+
+        protected virtual void InitializeGameloop() { }
+        protected virtual bool EndGame() => true;
+        protected virtual void ExecuteGameTurn() { }
+        protected virtual void DisplayGameResult() { }
+
+        protected void SwitchPlayer()
+        {
+            CurrentPlayer = CurrentPlayer == Player.Player1 ? Player.Player2 : Player.Player1;
         }
 
         public void WinResult(bool player1Win, bool player2Win)

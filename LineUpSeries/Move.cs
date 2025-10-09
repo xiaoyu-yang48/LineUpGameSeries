@@ -8,7 +8,7 @@ namespace LineUpSeries
 {
     public abstract class Move
     {
-        public List<Cell> ChangeCells = new List<Cell>();
+        public ChangeCell ChangeCells = new ChangeCell();
 
         public abstract void Execute(Board board);
         public abstract void Unexecute(Board board);
@@ -16,9 +16,10 @@ namespace LineUpSeries
 
     public class PlaceDiscMove : Move 
     {
-        private int Col { get; }
-        private Disc Disc { get; }
+        public int Col { get; }
+        public Disc Disc { get; }
         private int RowPlaced { get; set; } = -1;
+        public bool WasPlaced => RowPlaced >= 0;
 
         public PlaceDiscMove(int col, Disc disc)
         {
@@ -31,8 +32,13 @@ namespace LineUpSeries
             RowPlaced = board.PlaceDisc(Col, Disc);
             if (RowPlaced < 0) return;
 
-            ChangeCells.Clear();
+            ChangeCells = new ChangeCell();
             Disc.OnPlaced(board, RowPlaced, Col, ChangeCells);
+        }
+
+        public override void Unexecute(Board board)
+        {
+            
         }
     }
 }
