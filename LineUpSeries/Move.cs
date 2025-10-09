@@ -19,6 +19,7 @@ namespace LineUpSeries
         private int Col { get; }
         private Disc Disc { get; }
         private int RowPlaced { get; set; } = -1;
+        public bool WasPlaced => RowPlaced >= 0;
 
         public PlaceDiscMove(int col, Disc disc)
         {

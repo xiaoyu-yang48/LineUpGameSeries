@@ -84,15 +84,22 @@ namespace LineUpSeries
             // decide piece kind per side (AI sets this before ApplyMove via strategy)
             var kindToUse = _currentDiscKind;
 
-            // check inventory
+            // disc legality (inventory)
             var player = playerId == 1 ? Player.Player1 : Player.Player2;
-            if (!player.TryConsume(kindToUse))
+            var disc = DiscFactory.Create(kindToUse, playerId);
+            if (!Board.IsDiscLegal(disc))
             {
                 Console.WriteLine($"No stock for piece kind '{kindToUse}'. Use 'piece <kind>' or restock.");
                 return;
             }
 
-            var move = new PlaceDiscMove(col, DiscFactory.Create(kindToUse, playerId));
+            // consume and place
+            if (!player.TryConsume(kindToUse))
+            {
+                Console.WriteLine($"No stock for piece kind '{kindToUse}'. Use 'piece <kind>' or restock.");
+                return;
+            }
+            var move = new PlaceDiscMove(col, disc);
             move.Execute(Board);
             Board.ApplyGravity();
 

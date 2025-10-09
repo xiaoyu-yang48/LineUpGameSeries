@@ -53,6 +53,7 @@ namespace LineUpSeries
         public int PlaceDisc(int col, Disc disc)
         {
             if (!IsColumnLegal(col)) return -1;
+            if (!IsDiscLegal(disc)) return -1;
             for (int r = 0; r < Rows; r++)
             {
                 if (Cells[r][col].Disc == null)

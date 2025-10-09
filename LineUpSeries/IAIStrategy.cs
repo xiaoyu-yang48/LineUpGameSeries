@@ -58,7 +58,9 @@ namespace LineUpSeries
                 foreach (var kind in availableKinds)
                 {
                     var simBoard = board.Clone();
-                    var move = new PlaceDiscMove(c, DiscFactory.Create(kind, _aiPlayerId));
+                    var disc = DiscFactory.Create(kind, _aiPlayerId);
+                    if (!simBoard.IsDiscLegal(disc)) continue;
+                    var move = new PlaceDiscMove(c, disc);
                     move.Execute(simBoard);
                     simBoard.ApplyGravity();
                     bool p1, p2;
