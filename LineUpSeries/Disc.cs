@@ -19,7 +19,12 @@ namespace LineUpSeries
         }
 
         // hook for special disc behavior
-        public virtual void OnPlaced(Board board, int row, int col) { }
+        public virtual void OnPlaced(Board board, int row, int col, ChangeCell changeCells) 
+        {
+            var cell = board.Cells[row][col];
+            if (cell.Disc != null)
+                changeCells.Add(cell);
+        }
     }
 
     public enum DiscKind
@@ -48,5 +53,18 @@ namespace LineUpSeries
     public sealed class ExplosiveDisc : Disc
     {
         public override DiscKind Kind => DiscKind.Explosive;
+        public override void OnPlaced(Board board, int row, int col, ChangeCell changeCells)
+        {
+            for (int r = row - 1; r <= row + 1; r++)
+            {
+                for (int c = col - 1; c <= col + 1; c++)
+                {
+                    if (board.InBounds(r, c))
+                    {
+                        board.Cells[r][c].Disc = null;
+                    }
+                }
+            }
+        }
     }
 }

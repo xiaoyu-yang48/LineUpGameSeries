@@ -24,9 +24,6 @@ namespace LineUpSeries
             AiSrategy = aiSrategy;
         }
 
-        private const string SaveDirectory = "SavedGames";
-        private const string DefaultSaveFile = "SavedGame.json";
-
         //Template Pattern - Main game loop template - reference kehao-liu assignment 1
         public void StartGameLoop()
         {

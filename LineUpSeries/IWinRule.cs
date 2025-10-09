@@ -13,11 +13,11 @@ namespace LineUpSeries
         bool CheckCellWin(Board board, Cell cell);
     }
 
-    public class WinRule : IWinRule
+    public class ConnectWinRule : IWinRule
     {
         public int WinLen { get; }
 
-        public WinRule(int winLen)
+        public ConnectWinRule(int winLen)
         {
             if (winLen <= 1) throw new ArgumentException("WinLen is too short");
             WinLen = winLen;
