@@ -9,5 +9,6 @@ namespace LineUpSeries
     public sealed class LineUpClassic : Game
     {
         public override string Name => "LineUpClassic";
+
     }
 }

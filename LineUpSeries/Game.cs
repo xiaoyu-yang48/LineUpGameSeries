@@ -10,6 +10,8 @@ namespace LineUpSeries
     public abstract class Game
     {
         public abstract string Name { get; }
+        private const string SaveDirectory = "SavedGames";
+        private const string DefaultSaveFile = "SavedGame.json";
         public static void Start()
         { 
         }
