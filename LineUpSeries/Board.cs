@@ -45,7 +45,8 @@ namespace LineUpSeries
         {
             if (disc == null) return false;
             if (disc.PlayerId != 1 && disc.PlayerId != 2) return false;
-            var player = disc.PlayerId == 1 ? Player.Player1 : Player.Player2;
+            var player = Player.GetById(disc.PlayerId);
+            if (player == null) return false;
             return player.CanUse(disc.Kind);
         }
 

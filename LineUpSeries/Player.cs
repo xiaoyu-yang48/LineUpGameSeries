@@ -22,11 +22,13 @@ namespace LineUpSeries
             }
         }
 
-        public static Player Player1 { get; private set; } = new HumanPlayer(1);
-        public static Player Player2 { get; private set; } = new HumanPlayer(2);
+        public static Player? Player1 { get; private set; }
+        public static Player? Player2 { get; private set; }
 
         public static void SetPlayer1(Player p) => Player1 = p;
         public static void SetPlayer2(Player p) => Player2 = p;
+
+        public static Player? GetById(int id) => id == 1 ? Player1 : Player2;
 
         public bool CanUse(DiscKind kind)
         {
