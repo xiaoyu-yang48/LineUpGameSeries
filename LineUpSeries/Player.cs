@@ -15,9 +15,9 @@ namespace LineUpSeries
         {
             PlayerId = id;
             Inventory = new Dictionary<DiscKind, int>();
-            foreach (var k in DiscRegistry.GetAllKinds())
+            foreach (DiscKind k in Enum.GetValues(typeof(DiscKind)))
             {
-                Inventory[k] = DiscRegistry.GetDefaultStock(k);
+                Inventory[k] = 0;
             }
         }
 
@@ -40,6 +40,18 @@ namespace LineUpSeries
         {
             if (!Inventory.ContainsKey(kind)) Inventory[kind] = 0;
             Inventory[kind] += amount;
+        }
+
+        public void SetInventory(IDictionary<DiscKind, int> stock)
+        {
+            foreach (DiscKind k in Enum.GetValues(typeof(DiscKind)))
+            {
+                Inventory[k] = 0;
+            }
+            foreach (var kv in stock)
+            {
+                Inventory[kv.Key] = kv.Value;
+            }
         }
     }
 }

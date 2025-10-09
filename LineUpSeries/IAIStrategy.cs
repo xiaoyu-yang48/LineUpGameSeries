@@ -45,7 +45,7 @@ namespace LineUpSeries
         {
             var aiPlayer = _aiPlayerId == 1 ? Player.Player1 : Player.Player2;
             var availableKinds = new List<DiscKind>();
-            foreach (var kind in DiscRegistry.GetAllKinds())
+            foreach (DiscKind kind in Enum.GetValues(typeof(DiscKind)))
             {
                 if (aiPlayer.Inventory.TryGetValue(kind, out var cnt) && cnt > 0)
                     availableKinds.Add(kind);
@@ -60,7 +60,7 @@ namespace LineUpSeries
                 var cell = board.Cells[row][c];
                 foreach (var kind in availableKinds)
                 {
-                    cell.Disc = DiscRegistry.CreateDisc(kind, _aiPlayerId);
+                    cell.Disc = FileManager.CreateDisc(kind, _aiPlayerId);
                     bool win = _winRule.CheckCellWin(board, cell);
                     cell.Disc = null; // revert
                     if (win)

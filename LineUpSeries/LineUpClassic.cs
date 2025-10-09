@@ -26,8 +26,15 @@ namespace LineUpSeries
             _gameOver = false;
             _player1Win = false;
             _player2Win = false;
-            DiscRegistry.ApplyProfile(Player.Player1, GameVariant.Classic);
-            DiscRegistry.ApplyProfile(Player.Player2, GameVariant.Classic);
+            var stock = new Dictionary<DiscKind, int>
+            {
+                { DiscKind.Ordinary, 42 },
+                { DiscKind.Boring, 0 },
+                { DiscKind.Magnetic, 0 },
+                { DiscKind.Explosive, 0 },
+            };
+            Player.Player1.SetInventory(stock);
+            Player.Player2.SetInventory(stock);
             Console.WriteLine($"Game: {Name} | {Board.Rows}x{Board.Cols}, win {WinLen}");
             PrintHelp();
             PrintBoard();
@@ -85,7 +92,7 @@ namespace LineUpSeries
                 return;
             }
 
-            var move = new PlaceDiscMove(col, DiscRegistry.CreateDisc(kindToUse, playerId));
+            var move = new PlaceDiscMove(col, FileManager.CreateDisc(kindToUse, playerId));
             move.Execute(Board);
             Board.ApplyGravity();
 
