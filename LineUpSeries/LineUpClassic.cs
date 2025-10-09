@@ -75,7 +75,7 @@ namespace LineUpSeries
 
         private void ApplyMove(int col, int playerId)
         {
-            if (!Board.IsLegalMove(col))
+            if (!Board.IsColumnLegal(col))
             {
                 Console.WriteLine("Illegal move: column full or out of range.");
                 return;

@@ -20,7 +20,7 @@ namespace LineUpSeries
             var legal = new List<int>();
             for (int c = 0; c < board.Cols; c++)
             {
-                if (board.IsLegalMove(c)) legal.Add(c);
+                if (board.IsColumnLegal(c)) legal.Add(c);
             }
             if (legal.Count == 0) return -1;
             return legal[_random.Next(legal.Count)];
@@ -54,7 +54,7 @@ namespace LineUpSeries
             // 1) try immediate winning moves using any available piece kind
             for (int c = 0; c < board.Cols; c++)
             {
-                if (!board.IsLegalMove(c)) continue;
+                if (!board.IsColumnLegal(c)) continue;
                 foreach (var kind in availableKinds)
                 {
                     var simBoard = board.Clone();
@@ -77,7 +77,7 @@ namespace LineUpSeries
             var legal = new List<int>();
             for (int c = 0; c < board.Cols; c++)
             {
-                if (board.IsLegalMove(c)) legal.Add(c);
+                if (board.IsColumnLegal(c)) legal.Add(c);
             }
             if (legal.Count == 0) return -1;
 

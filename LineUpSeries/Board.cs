@@ -35,16 +35,24 @@ namespace LineUpSeries
             return Cells[row][col];
         }
 
-        public bool IsLegalMove(int col)
+        public bool IsColumnLegal(int col)
         {
             if (col < 0 || col >= Cols) return false;
             return GetCell(Rows - 1, col).IsEmpty;
         }
 
+        public bool IsDiscLegal(Disc disc)
+        {
+            if (disc == null) return false;
+            if (disc.PlayerId != 1 && disc.PlayerId != 2) return false;
+            // other future constraints for special discs can be added here
+            return true;
+        }
+
         //place a disc into a column
         public int PlaceDisc(int col, Disc disc)
         {
-            if (!IsLegalMove(col)) return -1;
+            if (!IsColumnLegal(col)) return -1;
             for (int r = 0; r < Rows; r++)
             {
                 if (Cells[r][col].Disc == null)
@@ -87,7 +95,7 @@ namespace LineUpSeries
         {
             for (int c = 0; c < Cols; c++)
             {
-                if (IsLegalMove(c)) return false;
+                if (IsColumnLegal(c)) return false;
             }
             return true;
         }
