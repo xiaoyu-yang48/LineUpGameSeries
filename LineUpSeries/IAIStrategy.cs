@@ -44,22 +44,16 @@ namespace LineUpSeries
         public int ChooseMove(Board board)
         {
             var aiPlayer = _aiPlayerId == 1 ? Player.Player1 : Player.Player2;
-            var availableKinds = new List<DiscKind>();
-            foreach (DiscKind kind in Enum.GetValues(typeof(DiscKind)))
-            {
-                if (aiPlayer.Inventory.TryGetValue(kind, out var cnt) && cnt > 0)
-                    availableKinds.Add(kind);
-            }
 
             // 1) try immediate winning moves using any available piece kind
             for (int c = 0; c < board.Cols; c++)
             {
                 if (!board.IsColumnLegal(c)) continue;
-                foreach (var kind in availableKinds)
+                foreach (DiscKind kind in Enum.GetValues(typeof(DiscKind)))
                 {
-                    var simBoard = board.Clone();
                     var disc = DiscFactory.Create(kind, _aiPlayerId);
-                    if (!simBoard.IsDiscLegal(disc)) continue;
+                    if (!board.IsDiscLegal(disc)) continue;
+                    var simBoard = board.Clone();
                     var move = new PlaceDiscMove(c, disc);
                     move.Execute(simBoard);
                     simBoard.ApplyGravity();
@@ -88,14 +82,25 @@ namespace LineUpSeries
             {
                 LastChosenDiscKind = DiscKind.Ordinary;
             }
-            else if (availableKinds.Count > 0)
-            {
-                LastChosenDiscKind = availableKinds[0];
-            }
             else
             {
-                // no stock at all, still pick a column; actual move will fail at consumption
-                LastChosenDiscKind = DiscKind.Ordinary;
+                // choose first legal kind by IsDiscLegal
+                bool chosen = false;
+                foreach (DiscKind kind in Enum.GetValues(typeof(DiscKind)))
+                {
+                    var disc = DiscFactory.Create(kind, _aiPlayerId);
+                    if (board.IsDiscLegal(disc))
+                    {
+                        LastChosenDiscKind = kind;
+                        chosen = true;
+                        break;
+                    }
+                }
+                if (!chosen)
+                {
+                    // no stock at all, still pick a column; actual move will fail at consumption
+                    LastChosenDiscKind = DiscKind.Ordinary;
+                }
             }
 
             return legal[_random.Next(legal.Count)];
