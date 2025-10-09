@@ -71,4 +71,27 @@ namespace LineUpSeries
             }
         }
     }
+
+    public static class DiscFactory
+    {
+        public static Disc Create(DiscKind kind, int playerId)
+        {
+            return kind switch
+            {
+                DiscKind.Boring => new BoringDisc(playerId),
+                DiscKind.Magnetic => new MagneticDisc(playerId),
+                DiscKind.Explosive => new ExplosiveDisc(playerId),
+                _ => new OrdinaryDisc(playerId)
+            };
+        }
+
+        public static Disc CreateFromString(string kind, int playerId)
+        {
+            if (Enum.TryParse<DiscKind>(kind, true, out var k))
+            {
+                return Create(k, playerId);
+            }
+            return new OrdinaryDisc(playerId);
+        }
+    }
 }

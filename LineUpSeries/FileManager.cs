@@ -94,7 +94,7 @@ namespace LineUpSeries
                     }
                     else
                     {
-                        board.Cells[r][c].Disc = CreateDisc(cell.Kind, cell.Owner);
+                        board.Cells[r][c].Disc = DiscFactory.CreateFromString(cell.Kind, cell.Owner);
                     }
                 }
             }
@@ -110,25 +110,7 @@ namespace LineUpSeries
             }
         }
 
-        public static Disc CreateDisc(string kind, int playerId)
-        {
-            if (Enum.TryParse<DiscKind>(kind, out var k))
-            {
-                return CreateDisc(k, playerId);
-            }
-            return new OrdinaryDisc(playerId);
-        }
-
-        public static Disc CreateDisc(DiscKind kind, int playerId)
-        {
-            return kind switch
-            {
-                DiscKind.Boring => new BoringDisc(playerId),
-                DiscKind.Magnetic => new MagneticDisc(playerId),
-                DiscKind.Explosive => new ExplosiveDisc(playerId),
-                _ => new OrdinaryDisc(playerId)
-            };
-        }
+        // Disc creation now handled by DiscFactory
 
         private static void RestoreInv(Player player, Dictionary<string, int> inv)
         {

@@ -92,7 +92,7 @@ namespace LineUpSeries
                 return;
             }
 
-            var move = new PlaceDiscMove(col, FileManager.CreateDisc(kindToUse, playerId));
+            var move = new PlaceDiscMove(col, DiscFactory.Create(kindToUse, playerId));
             move.Execute(Board);
             Board.ApplyGravity();
 

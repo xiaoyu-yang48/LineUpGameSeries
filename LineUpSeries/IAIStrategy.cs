@@ -60,7 +60,7 @@ namespace LineUpSeries
                 var cell = board.Cells[row][c];
                 foreach (var kind in availableKinds)
                 {
-                    cell.Disc = FileManager.CreateDisc(kind, _aiPlayerId);
+                    cell.Disc = DiscFactory.Create(kind, _aiPlayerId);
                     bool win = _winRule.CheckCellWin(board, cell);
                     cell.Disc = null; // revert
                     if (win)
