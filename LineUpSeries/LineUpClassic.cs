@@ -45,6 +45,11 @@ namespace LineUpSeries
                     _gameOver = true;
                     return;
                 }
+                // If AI strategy suggests a piece kind, adopt it for this move
+                if (AiStrategy is ImmediateWinOrRandomAIStrategy smart)
+                {
+                    _currentDiscKind = smart.LastChosenDiscKind;
+                }
                 ApplyMove(aiCol, CurrentPlayer.PlayerId);
                 return;
             }
@@ -69,8 +74,8 @@ namespace LineUpSeries
                 return;
             }
 
-            // decide piece kind per side (AI uses Ordinary by default)
-            var kindToUse = (playerId == 2 && _vsAI) ? DiscKind.Ordinary : _currentDiscKind;
+            // decide piece kind per side (AI sets this before ApplyMove via strategy)
+            var kindToUse = _currentDiscKind;
 
             // check inventory
             var player = playerId == 1 ? Player.Player1 : Player.Player2;
