@@ -10,12 +10,18 @@ namespace LineUpSeries
     public interface IWinRule
     {
         int WinLen { get; }
+
         bool CheckCellWin(Board board, Cell cell);
     }
 
     public class ConnectWinRule : IWinRule
     {
-        public int WinLen { get; }
+        public int WinLen { get; private set; }
+        public void SetWinLen(Board board)
+        {
+            int computed = (int)(board.Rows * board.Cols * 0.1);
+            WinLen = Math.Clamp(computed, 4, Math.Min(board.Rows, board.Cols));
+        }
 
         public ConnectWinRule(int winLen)
         {
