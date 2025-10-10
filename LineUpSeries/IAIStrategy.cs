@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -40,8 +40,7 @@ namespace LineUpSeries
                     move.Execute(simBoard);
                     bool p1w = false;
                     bool p2w = false;
-                    var rule = (_winRule as ConnectWinRule) ?? new ConnectWinRule(_winRule.WinLen);
-                    rule.WinCheck(simBoard, move.ChangeCells, out p1w, out p2w);
+                    _winRule.WinCheck(simBoard, move.ChangeCells, out p1w, out p2w);
                     bool win = (_aiPlayerId == 2 ? p2w  : p1w);
                     if (win)
                     {

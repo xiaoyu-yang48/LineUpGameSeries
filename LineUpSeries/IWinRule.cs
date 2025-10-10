@@ -12,6 +12,8 @@ namespace LineUpSeries
         int WinLen { get; }
 
         bool CheckCellWin(Board board, Cell cell);
+
+        void WinCheck(Board board, ChangeCell changeCells, out bool player1Win, out bool player2Win);
     }
 
     public class ConnectWinRule : IWinRule

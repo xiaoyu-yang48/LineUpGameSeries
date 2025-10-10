@@ -183,14 +183,9 @@ namespace LineUpSeries
             player.TryConsume(kindToUse);
             Board.ApplyGravity();
 
-            //wincheck
-            var rule = (WinRule as ConnectWinRule) ?? new ConnectWinRule(WinLen);
+            // wincheck: use configured WinRule (WinLen already set by board)
             var change = move.ChangeCells;
-            if (change == null)
-            {
-                return;
-            }
-            rule.WinCheck(Board, change, out _player1Win, out _player2Win);
+            WinRule.WinCheck(Board, change, out _player1Win, out _player2Win);
 
             if (_player1Win || _player2Win || Board.IsFull())
             {
