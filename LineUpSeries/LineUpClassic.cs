@@ -160,7 +160,8 @@ namespace LineUpSeries
 
         private void PrintHelp()
         {
-            Console.WriteLine("玩法: 连接4子获胜。每回合输入列号(1-列数)与棋子类型。");
+            Console.WriteLine("玩法: 连接4子获胜。");
+            Console.WriteLine("输入示例: 1b 表示第1列投放 Boring 棋子；支持 o/b/m/x。");
             Console.WriteLine("输入 q 退出当前对局，输入 h 查看帮助。");
         }
 
@@ -194,28 +195,33 @@ namespace LineUpSeries
             kind = DiscKind.Ordinary;
             while (true)
             {
-                Console.Write("请输入列号(1-列数)，或 q 退出，h 帮助: ");
+                Console.Write("请输入落子，如 1b（列+类型：o/b/m/x），q 退出，h 帮助: ");
                 var line = Console.ReadLine();
                 if (string.Equals(line, "q", StringComparison.OrdinalIgnoreCase)) return false;
                 if (string.Equals(line, "h", StringComparison.OrdinalIgnoreCase)) { PrintHelp(); PrintBoard(); continue; }
-                if (!int.TryParse(line, out int colInput)) { Console.WriteLine("请输入有效数字。"); continue; }
+                if (string.IsNullOrWhiteSpace(line)) { Console.WriteLine("输入为空。"); continue; }
+
+                line = line.Trim();
+                // 提取末尾字母作为棋子类型，其余为列号
+                char last = line[line.Length - 1];
+                if (!char.IsLetter(last)) { Console.WriteLine("格式应为 数字+字母，例如 1b。"); continue; }
+                string numPart = line.Substring(0, line.Length - 1);
+                if (!int.TryParse(numPart, out int colInput)) { Console.WriteLine("列号无效。"); continue; }
+
                 int colZero = colInput - 1;
                 if (colZero < 0 || colZero >= Board.Cols) { Console.WriteLine("列号越界。"); continue; }
 
-                // pick disc kind
-                Console.Write("选择棋子类型: 1) Ordinary  2) Boring  3) Magnetic  4) Explosive : ");
-                var k = Console.ReadLine();
-                if (!int.TryParse(k, out int kindInput) || kindInput < 1 || kindInput > 4) { Console.WriteLine("类型无效。"); continue; }
-                var chosen = kindInput switch
+                char kch = char.ToLowerInvariant(last);
+                kind = kch switch
                 {
-                    1 => DiscKind.Ordinary,
-                    2 => DiscKind.Boring,
-                    3 => DiscKind.Magnetic,
-                    4 => DiscKind.Explosive,
+                    'o' => DiscKind.Ordinary,
+                    'b' => DiscKind.Boring,
+                    'm' => DiscKind.Magnetic,
+                    'x' => DiscKind.Explosive,
                     _ => DiscKind.Ordinary
                 };
+
                 col = colZero;
-                kind = chosen;
                 return true;
             }
         }
