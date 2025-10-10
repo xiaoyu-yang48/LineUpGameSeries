@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -25,8 +25,17 @@ namespace LineUpSeries
             AiSrategy = aiSrategy;
         }
 
+        // Default constructor to enable simple modes to compile without explicit setup
+        protected Game()
+        {
+            Board = new Board(8, 9);
+            WinRule = new ConnectWinRule(4);
+            AiSrategy = new ImmeWinElseRandom(WinRule);
+            CurrentPlayer = new HumanPlayer(1);
+        }
+
         //Template Pattern - Game launcher to provide menu and setup
-        public void Run() 
+        public static void Run() 
         {
             while (true)
             {
@@ -41,9 +50,9 @@ namespace LineUpSeries
                 pick = pick.Trim();
 
                 if (pick == "4") return;
-                else if (pick == "1") LineUpClassic.Launch();
-                else if (pick == "2") LineUpBasic.Launch();
-                else if (pick == "3") LineUpSpin.Launch();
+                else if (pick == "1") LineUpClassic.PromptEntry();
+                else if (pick == "2") { var basic = new LineUpBasic(); basic.Launch(); }
+                else if (pick == "3") { var spin = new LineUpSpin(); spin.Launch(); }
 
                 else Console.WriteLine("Invalid input. Please enter 1-4.");
             }
