@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -114,6 +114,7 @@ namespace LineUpSeries
         //rotate clockwise
         public void RotateCW()
         {
+            // Optional feature for other variants; keep no-op in Classic
         }
     }
 }
