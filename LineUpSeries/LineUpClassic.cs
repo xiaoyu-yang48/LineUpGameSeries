@@ -26,15 +26,7 @@ namespace LineUpSeries
             _gameOver = false;
             _player1Win = false;
             _player2Win = false;
-            var stock = new Dictionary<DiscKind, int>
-            {
-                { DiscKind.Ordinary, 42 },
-                { DiscKind.Boring, 0 },
-                { DiscKind.Magnetic, 0 },
-                { DiscKind.Explosive, 0 },
-            };
-            Player.Player1.SetInventory(stock);
-            Player.Player2.SetInventory(stock);
+            AllocateInitialStockByBoardSize();
             Console.WriteLine($"Game: {Name} | {Board.Rows}x{Board.Cols}, win {WinLen}");
             PrintHelp();
             PrintBoard();
@@ -281,10 +273,39 @@ namespace LineUpSeries
                 }
                 Console.WriteLine();
             }
-            Print(Player.Player1);
-            Print(Player.Player2);
+            if (Player.Player1 != null) Print(Player.Player1);
+            if (Player.Player2 != null) Print(Player.Player2);
         }
 
-        
+        private void AllocateInitialStockByBoardSize()
+        {
+            int totalPerPlayer = Math.Max(0, (Board.Rows * Board.Cols) / 2);
+            var rng = new Random();
+
+            void AllocateFor(Player? player)
+            {
+                if (player == null) return;
+                var allSpecials = new[] { DiscKind.Boring, DiscKind.Magnetic, DiscKind.Explosive };
+                var chosen = allSpecials.OrderBy(_ => rng.Next()).Take(2).ToArray();
+                int eachSpecial = 2;
+                int specialTotal = chosen.Length * eachSpecial; // normally 4
+                if (totalPerPlayer < specialTotal)
+                {
+                    eachSpecial = totalPerPlayer / Math.Max(1, chosen.Length);
+                    specialTotal = chosen.Length * eachSpecial;
+                }
+                int ordinary = Math.Max(0, totalPerPlayer - specialTotal);
+
+                var stock = new Dictionary<DiscKind, int>
+                {
+                    [DiscKind.Ordinary] = ordinary
+                };
+                foreach (var k in chosen) stock[k] = eachSpecial;
+                player.SetInventory(stock);
+            }
+
+            AllocateFor(Player.Player1);
+            AllocateFor(Player.Player2);
+        }
     }
 }
