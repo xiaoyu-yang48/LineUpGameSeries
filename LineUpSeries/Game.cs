@@ -25,6 +25,33 @@ namespace LineUpSeries
             AiSrategy = aiSrategy;
         }
 
+        //Template Pattern - Game launcher to provide menu and setup
+        public void Run() 
+        {
+            while (true)
+            {
+                Console.WriteLine("==== LineUp Series ====");
+                Console.WriteLine("1: Classic");
+                Console.WriteLine("2: Basic");
+                Console.WriteLine("3: Spin");
+                Console.WriteLine("4: Exit");
+                Console.WriteLine("Select Game Mode:");
+                var pick = Console.ReadLine();
+                if (pick == null) return;
+                pick = pick.Trim();
+
+                if (pick == "4") return;
+                else if (pick == "1") LineUpClassic.Launch();
+                else if (pick == "2") LineUpBasic.Launch();
+                else if (pick == "3") LineUpSpin.Launch();
+
+                else Console.WriteLine("Invalid input. Please enter 1-4.");
+            }
+        }
+
+        //Hook for launching flow
+        public virtual void Launch() { }
+
         //Template Pattern - Main game loop template - reference kehao-liu assignment 1
         public void StartGameLoop()
         {

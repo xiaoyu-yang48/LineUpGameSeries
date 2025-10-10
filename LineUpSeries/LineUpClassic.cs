@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,6 +21,122 @@ namespace LineUpSeries
         {
             _isVsComputer = isVsComputer;
         }
+
+        public override void Launch()
+        {
+            PromptEntry();
+            StartGameLoop();
+        }
+
+        static void PromptEntry()
+        {
+            while (true)
+            {
+                Console.WriteLine("==== LineUpClassic ====");
+                Console.WriteLine("1: New Game");
+                Console.WriteLine("2: Back");
+                Console.WriteLine("Select: ");
+
+                var sel = Console.ReadLine();
+                if (sel == null) return;
+                sel = sel.Trim();
+
+                if (sel == "2") return;
+                else if (sel == "1")
+                {
+                    bool isVsComputer = PromptVsMode();
+                    (int rows, int cols) = PromptBoardSize();
+
+                    var board = new Board(rows, cols);
+                    var rule = new ConnectWinRule(4);
+                    rule.SetWinLen(board);
+                    var ai = new ImmeWinElseRandom(rule, 2);
+
+                    Player.SetPlayer1(new HumanPlayer(1));
+                    if (isVsComputer) Player.SetPlayer2(new ComputerPlayer(ai, 2));
+                    else Player.SetPlayer2(new HumanPlayer(2));
+
+                    var game = new LineUpClassic(board, Player.Player1, rule, ai, isVsComputer);
+                    game.Launch();
+
+                    Console.WriteLine("Enter q to quit");
+                    var cont = Console.ReadLine();
+                    if (string.Equals(cont, "q", StringComparison.OrdinalIgnoreCase)) return;
+                }
+                else
+                {
+                    Console.WriteLine("Invalid selection.");
+                    continue;
+                }
+            }
+        }
+        static bool PromptVsMode()
+        {
+            while (true)
+            {
+                Console.WriteLine("1: human vs human");
+                Console.WriteLine("2: human vs computer");
+                Console.WriteLine("Choose palyer mode:");
+
+                var mode = Console.ReadLine();
+                if (mode == null) return false;
+                mode = mode.Trim();
+                if (mode == "1") return false;
+                if (mode == "2") return true;
+                Console.WriteLine("Invalid input");
+            }
+        }
+
+        private static (int rows, int cols) PromptBoardSize()
+        {
+            const int minRows = 8;
+            const int minCols = 9;
+            int rows = 0;
+            int cols = 0;
+
+            while (true)
+            {
+                try
+                {
+                    Console.WriteLine($"Please enter your board rows: (>= {minRows})");
+                    rows = int.Parse(Console.ReadLine()?.Trim());
+                    Console.WriteLine($"Please enter your board columns: (>= {minCols}), and rows <= columns");
+                    cols = int.Parse(Console.ReadLine()?.Trim());
+
+                    if (rows < minRows)
+                        throw new ArgumentOutOfRangeException($"Rows must be >= {minRows}");
+                    if (cols < minCols)
+                        throw new ArgumentOutOfRangeException($"Columns must be >= {minCols}");
+                    if (rows > cols)
+                        throw new ArgumentOutOfRangeException("Rows cannot exceed columns.");
+
+                    break;
+                }
+                catch (ArgumentNullException)
+                {
+                    Console.WriteLine("Your input was null.");
+                }
+                catch (FormatException)
+                {
+                    Console.WriteLine("Your input was not a valid integer.");
+                }
+                catch (OverflowException)
+                {
+                    Console.WriteLine("Your number is too big or small");
+                }
+                catch (ArgumentOutOfRangeException e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("Invalid input");
+                }
+
+            return (rows, cols);
+            }
+        }
+
 
         protected override void InitializeGameloop()
         {
