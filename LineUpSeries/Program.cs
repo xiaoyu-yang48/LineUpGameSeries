@@ -4,8 +4,7 @@ namespace LineUpSeries
     {
         static void Main(string[] args)
         {
-            var launcher = new LauncherGame();
-            launcher.StartGameLoop();
+            GameEngine.Start();
         }
     }
 }
