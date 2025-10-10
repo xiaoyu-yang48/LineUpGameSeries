@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.ConstrainedExecution;
@@ -90,15 +90,15 @@ namespace LineUpSeries
             player1Win = false;
             player2Win = false;
 
-            if (changeCells == null) return;
+            // If we don't have concrete changed cells (e.g., explosive discs + gravity),
+            // fall back to scanning the whole board to ensure correctness.
+            var cellsToCheck = (changeCells != null && changeCells.Cells.Count > 0)
+                ? changeCells.Cells
+                : EnumerateAllOccupied(board);
 
-            foreach (var cell in changeCells.Cells)
+            foreach (var cell in cellsToCheck)
             {
-                int r = cell.Row;
-                int c = cell.Col;
-
-                if (!board.InBounds(r, c)) continue;
-
+                if (!board.InBounds(cell.Row, cell.Col)) continue;
                 int playerId = cell.Disc?.PlayerId ?? 0;
                 if (playerId == 0) continue;
                 if (CheckCellWin(board, cell))
@@ -108,6 +108,20 @@ namespace LineUpSeries
 
                     if (player1Win && player2Win) return;
                 }
+            }
+
+            static List<Cell> EnumerateAllOccupied(Board board)
+            {
+                var list = new List<Cell>();
+                for (int r = 0; r < board.Rows; r++)
+                {
+                    for (int c = 0; c < board.Cols; c++)
+                    {
+                        var cell = board.Cells[r][c];
+                        if (cell.Disc != null) list.Add(cell);
+                    }
+                }
+                return list;
             }
         }
     }
