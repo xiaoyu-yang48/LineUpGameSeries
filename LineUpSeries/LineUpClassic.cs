@@ -28,15 +28,18 @@ namespace LineUpSeries
                 var sel = Console.ReadLine();
                 if (sel == null) return;
                 sel = sel.Trim();
-                switch (sel)
+                if (sel == "1")
                 {
-                    case "1":
-                        break;
-                    case "2":
-                        return;
-                    default:
-                        Console.WriteLine("未知选项，请输入 1 或 2。");
-                        continue;
+                    // proceed to start a new game
+                }
+                else if (sel == "2")
+                {
+                    return;
+                }
+                else
+                {
+                    Console.WriteLine("未知选项，请输入 1 或 2。");
+                    continue;
                 }
 
                 bool isVsComputer = PromptVsMode();
