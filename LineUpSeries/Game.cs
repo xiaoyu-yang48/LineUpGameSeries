@@ -26,7 +26,7 @@ namespace LineUpSeries
         }
 
         //Template Pattern - Game launcher to provide menu and setup
-        public void Run() 
+        public static void Run() 
         {
             while (true)
             {
@@ -41,9 +41,9 @@ namespace LineUpSeries
                 pick = pick.Trim();
 
                 if (pick == "4") return;
-                else if (pick == "1") LineUpClassic.Launch();
-                else if (pick == "2") LineUpBasic.Launch();
-                else if (pick == "3") LineUpSpin.Launch();
+                else if (pick == "1") { var classic = new LineUpClassic(); classic.Launch(); }
+                else if (pick == "2") { var basic = new LineUpBasic(); basic.Launch(); }
+                else if (pick == "3") { var spin = new LineUpSpin(); spin.Launch(); }
 
                 else Console.WriteLine("Invalid input. Please enter 1-4.");
             }

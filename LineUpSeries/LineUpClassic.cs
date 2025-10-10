@@ -24,12 +24,6 @@ namespace LineUpSeries
 
         public override void Launch()
         {
-            PromptEntry();
-            StartGameLoop();
-        }
-
-        static void PromptEntry()
-        {
             while (true)
             {
                 Console.WriteLine("==== LineUpClassic ====");
@@ -57,7 +51,7 @@ namespace LineUpSeries
                     else Player.SetPlayer2(new HumanPlayer(2));
 
                     var game = new LineUpClassic(board, Player.Player1, rule, ai, isVsComputer);
-                    game.Launch();
+                    game.StartGameLoop();
 
                     Console.WriteLine("Enter q to quit");
                     var cont = Console.ReadLine();
@@ -132,9 +126,8 @@ namespace LineUpSeries
                 {
                     Console.WriteLine("Invalid input");
                 }
-
-            return (rows, cols);
             }
+            return (rows, cols);
         }
 
 
