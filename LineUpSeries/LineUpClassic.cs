@@ -16,7 +16,84 @@ namespace LineUpSeries
         private bool _player2Win;
         private readonly Random _random = new Random();
 
-        // Classic-specific launcher removed; centralized in Game.Run()
+        // Classic-specific launcher
+        public static void Launch()
+        {
+            while (true)
+            {
+                Console.WriteLine("==== LineUpClassic ====");
+                Console.WriteLine("1) New Game");
+                Console.WriteLine("2) Back");
+                Console.Write("Select: ");
+                var sel = Console.ReadLine();
+                if (sel == null) return;
+                sel = sel.Trim();
+                if (sel == "2") return;
+                if (sel != "1")
+                {
+                    Console.WriteLine("未知选项，请输入 1 或 2。");
+                    continue;
+                }
+
+                bool isVsComputer = PromptVsMode();
+                (int rows, int cols) = PromptBoardSize();
+
+                var board = new Board(rows, cols);
+                var rule = new ConnectWinRule(4);
+                rule.SetWinLen(board);
+                var ai = new ImmeWinElseRandom(rule, 2);
+
+                Player.SetPlayer1(new HumanPlayer(1));
+                if (isVsComputer) Player.SetPlayer2(new ComputerPlayer(ai, 2));
+                else Player.SetPlayer2(new HumanPlayer(2));
+
+                var game = new LineUpClassic(board, Player.Player1, rule, ai, isVsComputer);
+                game.StartGameLoop();
+
+                Console.WriteLine();
+                Console.WriteLine("按回车返回 Classic 菜单，或输入 'q' 直接退出到主菜单。");
+                var cont = Console.ReadLine();
+                if (string.Equals(cont, "q", StringComparison.OrdinalIgnoreCase)) return;
+                Console.Clear();
+            }
+
+            static bool PromptVsMode()
+            {
+                while (true)
+                {
+                    Console.WriteLine("选择对战模式:");
+                    Console.WriteLine("1) 人人对战");
+                    Console.WriteLine("2) 人机对战");
+                    Console.Write("Mode: ");
+                    var m = Console.ReadLine();
+                    if (m == null) return false;
+                    m = m.Trim();
+                    if (m == "1") return false;
+                    if (m == "2") return true;
+                    Console.WriteLine("未知选项，请输入 1 或 2。");
+                }
+            }
+
+            static (int rows, int cols) PromptBoardSize()
+            {
+                const int defaultRows = 6;
+                const int defaultCols = 7;
+                while (true)
+                {
+                    Console.Write($"请输入棋盘尺寸 (行 列)，默认 {defaultRows} {defaultCols}: ");
+                    var line = Console.ReadLine();
+                    if (string.IsNullOrWhiteSpace(line)) return (defaultRows, defaultCols);
+                    var parts = line.Trim().Split(new[] { ' ', '\t', ',', 'x', 'X' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length >= 2 && int.TryParse(parts[0], out int r) && int.TryParse(parts[1], out int c))
+                    {
+                        r = Math.Clamp(r, 4, 20);
+                        c = Math.Clamp(c, 4, 20);
+                        return (r, c);
+                    }
+                    Console.WriteLine("尺寸格式错误，例如: 6 7");
+                }
+            }
+        }
 
         public LineUpClassic(Board board, Player currentPlayer, IWinRule winRule, IAIStrategy aiSrategy, bool isVsComputer) : base(board, currentPlayer, winRule, aiSrategy)
         {
