@@ -48,7 +48,7 @@ namespace LineUpSeries
                 else Player.SetPlayer2(new HumanPlayer(2));
 
                 var game = new LineUpClassic(board, Player.Player1, rule, ai, isVsComputer);
-                game.StartGameLoop();
+                game.Launch();
 
                 Console.WriteLine();
                 Console.WriteLine("按回车返回 Classic 菜单，或输入 'q' 直接退出到主菜单。");
@@ -98,6 +98,11 @@ namespace LineUpSeries
         public LineUpClassic(Board board, Player currentPlayer, IWinRule winRule, IAIStrategy aiSrategy, bool isVsComputer) : base(board, currentPlayer, winRule, aiSrategy)
         {
             _isVsComputer = isVsComputer;
+        }
+
+        public override void Launch()
+        {
+            StartGameLoop();
         }
 
         protected override void InitializeGameloop()

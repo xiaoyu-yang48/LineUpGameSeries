@@ -54,6 +54,12 @@ namespace LineUpSeries
         protected readonly IAIStrategy AiSrategy;
         public int WinLen => WinRule.WinLen;
 
+        // Hook for subclass-specific launching flow (optional override)
+        public virtual void Launch()
+        {
+            Console.WriteLine("该模式尚未提供实例化启动入口。");
+        }
+
         protected Game (Board board, Player currentPlayer, IWinRule winRule, IAIStrategy aiSrategy)
         {
             Board = board;
