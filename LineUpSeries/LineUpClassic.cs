@@ -83,22 +83,48 @@ namespace LineUpSeries
 
             static (int rows, int cols) PromptBoardSize()
             {
-                const int defaultRows = 6;
-                const int defaultCols = 7;
+                const int minRows = 8;
+                const int minCols = 9;
+                int rows = 0;
+                int cols = 0;
                 while (true)
                 {
-                    Console.Write($"请输入棋盘尺寸 (行 列)，默认 {defaultRows} {defaultCols}: ");
-                    var line = Console.ReadLine();
-                    if (string.IsNullOrWhiteSpace(line)) return (defaultRows, defaultCols);
-                    var parts = line.Trim().Split(new[] { ' ', '\t', ',', 'x', 'X' }, StringSplitOptions.RemoveEmptyEntries);
-                    if (parts.Length >= 2 && int.TryParse(parts[0], out int r) && int.TryParse(parts[1], out int c))
+                    try
                     {
-                        r = Math.Clamp(r, 4, 20);
-                        c = Math.Clamp(c, 4, 20);
-                        return (r, c);
+                        Console.WriteLine($"Please enter your board rows: (>= {minRows})");
+                        rows = int.Parse(Console.ReadLine()?.Trim());
+                        Console.WriteLine($"Please enter your board columns: (>= {minCols}), and rows <= columns");
+                        cols = int.Parse(Console.ReadLine()?.Trim());
+                        if (rows < minRows)
+                            throw new ArgumentOutOfRangeException($"Rows must be >= {minRows}");
+                        if (cols < minCols)
+                            throw new ArgumentOutOfRangeException($"Columns must be >= {minCols}");
+                        if (rows > cols)
+                            throw new ArgumentOutOfRangeException("Rows cannot exceed columns.");
+                        break;
                     }
-                    Console.WriteLine("尺寸格式错误，例如: 6 7");
+                    catch (ArgumentNullException)
+                    {
+                        Console.WriteLine("Your input was null.");
+                    }
+                    catch (FormatException)
+                    {
+                        Console.WriteLine("Your input was not a valid integer.");
+                    }
+                    catch (OverflowException)
+                    {
+                        Console.WriteLine("Your number is too big or small");
+                    }
+                    catch (ArgumentOutOfRangeException e)
+                    {
+                        Console.WriteLine(e.Message);
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine("Invalid input");
+                    }
                 }
+                return (rows, cols);
             }
         }
 
