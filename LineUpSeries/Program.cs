@@ -4,7 +4,7 @@ namespace LineUpSeries
     {
         static void Main(string[] args)
         {
-            LineUpClassic.Run();
+            Game.Run();
         }
     }
 }
