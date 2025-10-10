@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -23,6 +23,11 @@ namespace LineUpSeries
             CurrentPlayer = currentPlayer;
             WinRule = winRule;
             AiSrategy = aiSrategy;
+        }
+
+        // Provide a default constructor so simple modes can instantiate without setup
+        protected Game() : this(new Board(8, 9), new HumanPlayer(1), new ConnectWinRule(4), new ImmeWinElseRandom(new ConnectWinRule(4)))
+        {
         }
 
         //Template Pattern - Game launcher to provide menu and setup

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
@@ -16,6 +16,8 @@ namespace LineUpSeries
         private bool _player1Win;
         private bool _player2Win;
         private readonly Random _random = new Random();
+
+        public LineUpClassic() : base() { }
 
         public LineUpClassic(Board board, Player currentPlayer, IWinRule winRule, IAIStrategy aiSrategy, bool isVsComputer) : base(board, currentPlayer, winRule, aiSrategy)
         {
