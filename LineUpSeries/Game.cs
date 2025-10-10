@@ -28,7 +28,7 @@ namespace LineUpSeries
         //Template Pattern - Main game loop template - reference kehao-liu assignment 1
         public void StartGameLoop()
         {
-            InitializeGameLoop();
+            InitializeGameloop();
 
             while (!EndGame())
             {
