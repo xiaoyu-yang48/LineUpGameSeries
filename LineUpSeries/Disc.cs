@@ -45,12 +45,70 @@ namespace LineUpSeries
     {
         public override DiscKind Kind => DiscKind.Boring;
         public BoringDisc(int playerId) : base(playerId) { }
+
+        public override void OnPlaced(Board board, int row, int col, ChangeCell changeCells)
+        {
+            var placedCell = board.Cells[row][col];
+            if (placedCell != null && placedCell.Disc is BoringDisc)
+            {
+                for (int r = 0; r < row; r++)
+                {
+                    var cell = board.Cells[r][col];
+                    if (cell != null && cell.Disc != null)
+                    {
+                        int owner = cell.Disc.PlayerId;
+                        Player p = Player.GetById(owner);
+                        if (p != null)
+                        {
+                            p.ReturnDisc(1);
+                        }
+                        cell.Disc = null;
+                    }
+                }
+                int placedOwner = placedCell.Disc.PlayerId;
+                placedCell.Disc = new OrdinaryDisc(placedOwner);
+                board.ApplyGravity();
+                Cell changed = board.Cells[0][col];
+                changeCells.Add(changed);
+            }
+        }
     }
 
     public sealed class MagneticDisc : Disc
     {
         public override DiscKind Kind => DiscKind.Magnetic;
         public MagneticDisc(int playerId) : base(playerId) { }
+        public override void OnPlaced(Board board, int row, int col, ChangeCell changeCells)
+        {
+            var placedCell = board.Cells[row][col];
+            if (placedCell != null && placedCell.Disc is MagneticDisc)
+            {
+                int placedOwner = placedCell.Disc.PlayerId;
+                //row == 0, no place underneath
+                if (row == 0 || (row > 0 && board.Cells[row - 1][col].Owner == placedOwner))
+                {
+                    placedCell.Disc = new OrdinaryDisc(placedOwner);
+                    changeCells.Add(placedCell);
+                    return;
+                }
+                for (int r = row - 2; r >= 0; r--)
+                {
+                    var cellToUp = board.Cells[r][col];
+                    if (cellToUp != null && cellToUp.Owner == placedOwner)
+                    {
+                        var cellToDown = board.Cells[r + 1][col];
+                        var newUpCell = board.Cells[r + 1][col] = cellToUp;
+                        var newDownCell = board.Cells[r][col] = cellToDown;
+                        placedCell.Disc = new OrdinaryDisc(placedOwner);
+                        changeCells.Add(placedCell);
+                        changeCells.Add(newUpCell);
+                        changeCells.Add((newDownCell));
+                        break;
+                    }
+                }
+                return;
+            }   
+        }
     }
 
     public sealed class ExplosiveDisc : Disc
@@ -69,6 +127,7 @@ namespace LineUpSeries
                     }
                 }
             }
+            board.ApplyGravity();
         }
     }
 

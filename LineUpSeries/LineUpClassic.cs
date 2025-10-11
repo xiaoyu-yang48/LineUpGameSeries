@@ -205,7 +205,6 @@ namespace LineUpSeries
             }
 
             player.TryConsume(kindToUse);
-            Board.ApplyGravity();
 
             //wincheck
             var rule = (WinRule as ConnectWinRule) ?? new ConnectWinRule(WinLen);
