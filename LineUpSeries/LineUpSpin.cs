@@ -9,7 +9,7 @@ namespace LineUpSeries
     internal class LineUpSpin : Game
     {
         public override string Name => "LineUpSpin";
-        public LineUpSpin() : base() { }
+        public LineUpSpin() {}
         public override void Launch()
         {
             Console.WriteLine("==== LineUpSpin ====");
