@@ -25,6 +25,10 @@ namespace LineUpSeries
             AiSrategy = aiSrategy;
         }
 
+        //default constructor
+        protected Game() : this(new Board(8, 9), new HumanPlayer(1), new ConnectWinRule(4), new ImmeWinElseRandom(new ConnectWinRule(4)))
+        { }
+
         //Template Pattern - Game launcher to provide menu and setup
         public static void Run() 
         {

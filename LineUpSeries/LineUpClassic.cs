@@ -22,6 +22,11 @@ namespace LineUpSeries
             _isVsComputer = isVsComputer;
         }
 
+        //default constructor
+        public LineUpClassic() : base() 
+        {
+        }
+
         public override void Launch()
         {
             while (true)

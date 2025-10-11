@@ -9,6 +9,7 @@ namespace LineUpSeries
     public sealed class LineUpBasic : Game
     {
         public override string Name => "LineUpBasic";
+        public LineUpBasic() : base() { }
         public override void Launch()
         {
             Console.WriteLine("==== LineUpBasic ====");
