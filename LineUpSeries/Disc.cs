@@ -97,16 +97,17 @@ namespace LineUpSeries
                     if (cellToUp != null && cellToUp.Owner == placedOwner)
                     {
                         var cellToDown = board.Cells[r + 1][col];
-                        var newUpCell = board.Cells[r + 1][col] = cellToUp;
-                        var newDownCell = board.Cells[r][col] = cellToDown;
+                        var cellToUpDisc = cellToUp.Disc;
+                        cellToUp.Disc = cellToDown.Disc;
+                        cellToDown.Disc = cellToUpDisc;
+
                         placedCell.Disc = new OrdinaryDisc(placedOwner);
                         changeCells.Add(placedCell);
-                        changeCells.Add(newUpCell);
-                        changeCells.Add((newDownCell));
+                        changeCells.Add(cellToDown);
+                        changeCells.Add((cellToUp));
                         break;
                     }
                 }
-                return;
             }   
         }
     }
