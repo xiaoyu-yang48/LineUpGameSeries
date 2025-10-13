@@ -159,7 +159,7 @@ namespace LineUpSeries
                     _gameOver = true;
                     return;
                 }
-                ApplyMove(aiMove.Col, CurrentPlayer.playerId, aiMove.Disc.Kind);
+                ApplyMove(aiMove.Col, aiMove.Disc.Kind);
                 return;
             }
             Console.WriteLine($"Your turn.");
@@ -171,11 +171,11 @@ namespace LineUpSeries
                 _gameOver = true;
                 return;
             }
-            ApplyMove(col, CurrentPlayer.playerId, kind);
+            ApplyMove(col, kind);
 
         }
 
-        private void ApplyMove(int col, int playerId, DiscKind kindToUse)
+        private void ApplyMove(int col, DiscKind kindToUse)
         {
             if (!_player1Win && !_player2Win && Board.IsFull())
             {
@@ -189,32 +189,30 @@ namespace LineUpSeries
                 return;
             }
 
-            var player = GetPlayerById(playerId);
-            if (player == null) return;
 
             // Check if player has the disc kind before consuming
-            if (!player.CanUse(kindToUse))
+            if (!CurrentPlayer.CanUse(kindToUse))
             {
                 Console.WriteLine("Insufficient disc type. Please choose another disc kind.");
                 return;
             }
 
             // Consume the disc first
-            if (!player.TryConsume(kindToUse))
+            if (!CurrentPlayer.TryConsume(kindToUse))
             {
                 Console.WriteLine("Failed to consume disc.");
                 return;
             }
 
             // Create and place the disc
-            var disc = DiscFactory.Create(kindToUse, player);
+            var disc = DiscFactory.Create(kindToUse, CurrentPlayer);
             var move = new PlaceDiscMove(col, disc);
             move.Execute(Board);
             if (!move.WasPlaced)
             {
                 Console.WriteLine("Failed to place a disc. Please retry.");
                 // Return the disc back to inventory since placement failed
-                player.AddStock(kindToUse, 1);
+                CurrentPlayer.AddStock(kindToUse, 1);
                 return;
             }
 

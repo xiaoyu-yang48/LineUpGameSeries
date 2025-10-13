@@ -90,6 +90,8 @@ namespace LineUpSeries
         public Board Clone()
         {
             var clone = new Board(Rows, Cols);
+            var playerClones = new Dictionary<int, Player>();
+
             for (int r = 0; r < Rows; r++)
             {
                 for (int c = 0; c < Cols; c++)
@@ -97,7 +99,12 @@ namespace LineUpSeries
                     var disc = Cells[r][c].Disc;
                     if (disc != null)
                     {
-                        clone.Cells[r][c].Disc = DiscFactory.Create(disc.Kind, disc.Owner);
+                        // Clone player only once per playerId
+                        if (!playerClones.ContainsKey(disc.PlayerId))
+                        {
+                            playerClones[disc.PlayerId] = disc.Owner.Clone();
+                        }
+                        clone.Cells[r][c].Disc = DiscFactory.Create(disc.Kind, playerClones[disc.PlayerId]);
                     }
                 }
             }

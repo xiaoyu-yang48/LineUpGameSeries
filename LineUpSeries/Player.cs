@@ -45,6 +45,19 @@ namespace LineUpSeries
         {
             Inventory[DiscKind.Ordinary] += count;
         }
+
+        public Player Clone()
+        {
+            Player clone = this is ComputerPlayer cp
+                ? new ComputerPlayer(cp.Strategy, playerId)
+                : new HumanPlayer(playerId);
+
+            foreach (var kvp in Inventory)
+            {
+                clone.Inventory[kvp.Key] = kvp.Value;
+            }
+            return clone;
+        }
     }
 
     public sealed class HumanPlayer : Player
