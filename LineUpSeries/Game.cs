@@ -11,7 +11,9 @@ namespace LineUpSeries
     {
         public abstract string Name { get; }
         public Board Board { get; }
-        public Player CurrentPlayer { get; private set; } = Player.Player1;
+        public Player? Player1 { get; private set; }
+        public Player? Player2 { get; private set; }
+        public Player CurrentPlayer { get; private set; }
 
         protected readonly IWinRule WinRule;
         protected readonly IAIStrategy AiSrategy;
@@ -74,9 +76,13 @@ namespace LineUpSeries
         protected virtual void ExecuteGameTurn() { }
         protected virtual void DisplayGameResult() { }
 
+        public void SetPlayer1(Player p) => Player1 = p;
+        public void SetPlayer2(Player p) => Player2 = p;
+        public Player? GetPlayerById(int id) => id == 1 ? Player1 : Player2;
+
         protected void SwitchPlayer()
         {
-            CurrentPlayer = CurrentPlayer == Player.Player1 ? Player.Player2 : Player.Player1;
+            CurrentPlayer = CurrentPlayer == Player1 ? Player2 : Player1;
         }
 
         public void WinResult(bool player1Win, bool player2Win)

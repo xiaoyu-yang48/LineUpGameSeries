@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -22,13 +23,6 @@ namespace LineUpSeries
             }
         }
 
-        public static Player Player1 { get; private set; } 
-        public static Player Player2 { get; private set; }
-
-        public static void SetPlayer1(Player p) => Player1 = p;
-        public static void SetPlayer2(Player p) => Player2 = p;
-
-        public static Player? GetById(int id) => id == 1 ? Player1 : Player2;
         public bool CanUse(DiscKind kind)
         { 
             return Inventory.TryGetValue(kind, out var count) && count > 0;
@@ -37,6 +31,7 @@ namespace LineUpSeries
         {
             if(!Inventory.TryGetValue(kind, out var count) || count <= 0) return false;
             Inventory[kind] = count - 1;
+            Console.WriteLine($"after consuming, player{playerId} stii has {Inventory[kind]}");
             return true;
         }
 

@@ -41,17 +41,10 @@ namespace LineUpSeries
             return GetCell(Rows - 1, col).IsEmpty;
         }
 
-        public bool IsDiscLegal(Disc disc)
-        {
-            if (disc == null) return false;
-            var player = disc.PlayerId == 1 ? Player.Player1 : Player.Player2;
-            return player.CanUse(disc.Kind);
-        }
-
         //place a disc into a column
         public int PlaceDisc(int col, Disc disc)
         {
-            if (!IsColumnLegal(col) || !IsDiscLegal(disc)) return -1;
+            if (!IsColumnLegal(col)) return -1;
             for (int r = 0; r < Rows; r++)
             {
                 if (Cells[r][col].Disc == null)
@@ -104,7 +97,7 @@ namespace LineUpSeries
                     var disc = Cells[r][c].Disc;
                     if (disc != null)
                     {
-                        clone.Cells[r][c].Disc = DiscFactory.Create(disc.Kind, disc.PlayerId);
+                        clone.Cells[r][c].Disc = DiscFactory.Create(disc.Kind, disc.Owner);
                     }
                 }
             }
