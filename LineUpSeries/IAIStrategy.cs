@@ -8,7 +8,7 @@ namespace LineUpSeries
 {
     public interface IAIStrategy
     {
-        PlaceDiscMove? PickMove(Board board);
+        PlaceDiscMove? PickMove(Board board, Player aiPlayer);
     }
 
     public sealed class ImmeWinElseRandom : IAIStrategy
@@ -24,17 +24,16 @@ namespace LineUpSeries
             _aiPlayerId = aiPlayerId;
         }
 
-        public PlaceDiscMove? PickMove(Board board)
-        { 
-            var aiPlayer = _aiPlayerId == 2 ? Player.Player2 : Player.Player1;
+        public PlaceDiscMove? PickMove(Board board, Player aiPlayer)
+        {
 
             for (int c = 0; c < board.Cols; c++)
             {
                 if (!board.IsColumnLegal(c)) continue;
                 foreach (DiscKind kind in Enum.GetValues(typeof(DiscKind)))
                 {
-                    var disc = DiscFactory.Create(kind, _aiPlayerId);
-                    if (!board.IsDiscLegal(disc)) continue;
+                    if (!aiPlayer.CanUse(kind)) continue;
+                    var disc = DiscFactory.Create(kind, aiPlayer);
                     var simBoard = board.Clone();
                     var move = new PlaceDiscMove(c, disc);
                     move.Execute(simBoard);
@@ -46,7 +45,7 @@ namespace LineUpSeries
                     if (win)
                     {
                         PickedDiscKind = kind;
-                        return new PlaceDiscMove(c, DiscFactory.Create(kind, _aiPlayerId));
+                        return new PlaceDiscMove(c, DiscFactory.Create(kind, aiPlayer));
                     }
                 }
             }
@@ -63,12 +62,11 @@ namespace LineUpSeries
             {
                 PickedDiscKind = DiscKind.Ordinary;
             }
-            else 
+            else
             {
                 foreach (DiscKind kind in Enum.GetValues(typeof(DiscKind)))
                 {
-                    var disc = DiscFactory.Create(kind, _aiPlayerId);
-                    if (board.IsDiscLegal(disc))
+                    if (aiPlayer.CanUse(kind))
                     {
                         PickedDiscKind = kind;
                         break;
@@ -76,8 +74,8 @@ namespace LineUpSeries
                 }
             }
             int pickedCol = playableCol[_random.Next(playableCol.Count)];
-            var pickedDisc = DiscFactory.Create(PickedDiscKind, _aiPlayerId);
-            if (!board.IsDiscLegal(pickedDisc)) return null;
+            if (!aiPlayer.CanUse(PickedDiscKind)) return null;
+            var pickedDisc = DiscFactory.Create(PickedDiscKind, aiPlayer);
             return new PlaceDiscMove(pickedCol, pickedDisc);
         }
     }

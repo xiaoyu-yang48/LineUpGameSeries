@@ -51,11 +51,12 @@ namespace LineUpSeries
                     rule.SetWinLen(board);
                     var ai = new ImmeWinElseRandom(rule, 2);
 
-                    Player.SetPlayer1(new HumanPlayer(1));
-                    if (isVsComputer) Player.SetPlayer2(new ComputerPlayer(ai, 2));
-                    else Player.SetPlayer2(new HumanPlayer(2));
+                    var player1 = new HumanPlayer(1);
+                    Player player2 = isVsComputer ? new ComputerPlayer(ai, 2) : new HumanPlayer(2);
 
-                    var game = new LineUpClassic(board, Player.Player1, rule, ai, isVsComputer);
+                    var game = new LineUpClassic(board, player1, rule, ai, isVsComputer);
+                    game.SetPlayer1(player1);
+                    game.SetPlayer2(player2);
                     game.StartGameLoop();
 
                     Console.WriteLine("Enter q to quit");
@@ -150,15 +151,15 @@ namespace LineUpSeries
 
         protected override void ExecuteGameTurn()
         {
-            if (CurrentPlayer == Player.Player2 && _isVsComputer)
+            if (CurrentPlayer == Player2 && _isVsComputer)
             {
-                var aiMove = AiSrategy.PickMove(Board);
+                var aiMove = AiSrategy.PickMove(Board, Player2);
                 if (aiMove == null)
                 {
                     _gameOver = true;
                     return;
                 }
-                ApplyMove(aiMove.Col, CurrentPlayer.playerId, aiMove.Disc.Kind);
+                ApplyMove(aiMove.Col, aiMove.Disc.Kind);
                 return;
             }
             Console.WriteLine($"Your turn.");
@@ -170,11 +171,11 @@ namespace LineUpSeries
                 _gameOver = true;
                 return;
             }
-            ApplyMove(col, CurrentPlayer.playerId, kind);
+            ApplyMove(col, kind);
 
         }
 
-        private void ApplyMove(int col, int playerId, DiscKind kindToUse)
+        private void ApplyMove(int col, DiscKind kindToUse)
         {
             if (!_player1Win && !_player2Win && Board.IsFull())
             {
@@ -188,23 +189,32 @@ namespace LineUpSeries
                 return;
             }
 
-            var player = Player.GetById(playerId);
-            var disc = DiscFactory.Create(kindToUse, playerId);
-            if (!Board.IsDiscLegal(disc))
+
+            // Check if player has the disc kind before consuming
+            if (!CurrentPlayer.CanUse(kindToUse))
             {
                 Console.WriteLine("Insufficient disc type. Please choose another disc kind.");
                 return;
             }
 
+            // Consume the disc first
+            if (!CurrentPlayer.TryConsume(kindToUse))
+            {
+                Console.WriteLine("Failed to consume disc.");
+                return;
+            }
+
+            // Create and place the disc
+            var disc = DiscFactory.Create(kindToUse, CurrentPlayer);
             var move = new PlaceDiscMove(col, disc);
             move.Execute(Board);
             if (!move.WasPlaced)
             {
                 Console.WriteLine("Failed to place a disc. Please retry.");
+                // Return the disc back to inventory since placement failed
+                CurrentPlayer.AddStock(kindToUse, 1);
                 return;
             }
-
-            player.TryConsume(kindToUse);
 
             //wincheck
             var rule = (WinRule as ConnectWinRule) ?? new ConnectWinRule(WinLen);
@@ -326,7 +336,7 @@ namespace LineUpSeries
         }
 
         private void AllocateInitialStockByBoardSize()
-        { 
+        {
             int totalCells = Board.Rows * Board.Cols;
             int perPlayer = totalCells / 2;
             var specials = new List<DiscKind> { DiscKind.Boring, DiscKind.Magnetic, DiscKind.Explosive};
@@ -334,12 +344,12 @@ namespace LineUpSeries
             var p1s1 = specials[_random.Next(specials.Count)];
             DiscKind p1s2;
             do { p1s2 = specials[_random.Next(specials.Count)]; } while (p1s2 == p1s1);
-            AllocateFor(Player.Player1, perPlayer, p1s1, p1s2);
+            AllocateFor(Player1, perPlayer, p1s1, p1s2);
 
             var p2s1 = specials[_random.Next(specials.Count)];
             DiscKind p2s2;
             do { p2s2 = specials[_random.Next(specials.Count)]; } while (p2s2 == p2s1);
-            AllocateFor(Player.Player2, perPlayer, p2s1, p2s2);
+            AllocateFor(Player2, perPlayer, p2s1, p2s2);
 
             void AllocateFor(Player p, int total, DiscKind s1, DiscKind s2)
             {
