@@ -83,7 +83,7 @@ namespace LineUpSeries
 
         public void SetPlayer1(Player p) => Player1 = p;
         public void SetPlayer2(Player p) => Player2 = p;
-        public Player? GetPlayerById(int id) => id == 1 ? Player1 : Player2;
+        public Player GetPlayerById(int id) => id == 1 ? Player1 : Player2;
 
         protected void SwitchPlayer()
         {
