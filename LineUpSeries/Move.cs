@@ -11,7 +11,6 @@ namespace LineUpSeries
         public ChangeCell ChangeCells = new ChangeCell();
 
         public abstract void Execute(Board board);
-        public abstract void Unexecute(Board board);
     }
 
     public class PlaceDiscMove : Move 
@@ -34,11 +33,6 @@ namespace LineUpSeries
 
             ChangeCells = new ChangeCell();
             Disc.OnPlaced(board, RowPlaced, Col, ChangeCells);
-        }
-
-        public override void Unexecute(Board board)
-        {
-            
         }
     }
 }

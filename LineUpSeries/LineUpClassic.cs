@@ -144,6 +144,10 @@ namespace LineUpSeries
             AllocateInitialStockByBoardSize();
             PrintHelp();
             PrintBoard();
+
+            // Save initial state for undo/redo
+            var initialSnapshot = CaptureGameState(_player1Win, _player2Win, _gameOver);
+            MoveManager.SaveState(initialSnapshot);
         }
 
         protected override bool EndGame() => _gameOver;
@@ -161,7 +165,6 @@ namespace LineUpSeries
                 ApplyMove(aiMove.Col, CurrentPlayer.playerId, aiMove.Disc.Kind);
                 return;
             }
-            Console.WriteLine($"Your turn.");
             PrintInventory(CurrentPlayer);
             int col;
             DiscKind kind;
@@ -204,7 +207,7 @@ namespace LineUpSeries
                 return;
             }
 
-            player.TryConsume(kindToUse);
+            player?.TryConsume(kindToUse);
 
             //wincheck
             var rule = (WinRule as ConnectWinRule) ?? new ConnectWinRule(WinLen);
@@ -223,6 +226,9 @@ namespace LineUpSeries
             }
 
             SwitchPlayer();
+            // Save state AFTER executing move and switching player
+            var snapshot = CaptureGameState(_player1Win, _player2Win, _gameOver);
+            MoveManager.SaveState(snapshot);
             PrintBoard();
         }
 
@@ -287,10 +293,34 @@ namespace LineUpSeries
 
             while (true)
             {
-                Console.WriteLine("Enter your move: e.g., 1B for BoringDisc in Column 1, Q: quit, H: help");
+                Console.WriteLine("Enter your move: e.g., 1B for BoringDisc in Column 1");
+                Console.WriteLine("Commands: Q: quit, H: help, Undo: undo, Redo: redo previous undone action");
                 var line = Console.ReadLine();
                 if (string.Equals(line, "q", StringComparison.OrdinalIgnoreCase)) return false;
                 if (string.Equals(line, "h", StringComparison.OrdinalIgnoreCase)) { PrintHelp(); PrintBoard(); continue; }
+
+                // Handle undo
+                if (string.Equals(line, "undo", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (PerformUndo(out _player1Win, out _player2Win, out _gameOver))
+                    {
+                        PrintBoard();
+                        return true; // Exit to let game loop continue with restored player
+                    }
+                    continue;
+                }
+
+                // Handle redo
+                if (string.Equals(line, "redo", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (PerformRedo(out _player1Win, out _player2Win, out _gameOver))
+                    {
+                        PrintBoard();
+                        return true; // Exit to let game loop continue with restored player
+                    }
+                    continue;
+                }
+
                 if (string.IsNullOrWhiteSpace(line)) { Console.WriteLine("Empty input"); continue;}
 
                 line = line.Trim();
