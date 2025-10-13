@@ -11,11 +11,12 @@ namespace LineUpSeries
     {
         public abstract DiscKind Kind { get; }
 
-        //owner id
-        public int PlayerId { get; }
-        protected Disc(int playerId)
+        public Player Owner { get; }
+        public int PlayerId => Owner.playerId;
+
+        protected Disc(Player owner)
         {
-            PlayerId = playerId;
+            Owner = owner;
         }
 
         // hook for special disc behavior
@@ -35,16 +36,16 @@ namespace LineUpSeries
         Explosive
     }
 
-    public sealed class OrdinaryDisc : Disc 
+    public sealed class OrdinaryDisc : Disc
     {
         public override DiscKind Kind => DiscKind.Ordinary;
-        public OrdinaryDisc(int playerId): base(playerId) { }
+        public OrdinaryDisc(Player owner): base(owner) { }
     }
 
     public sealed class BoringDisc : Disc
     {
         public override DiscKind Kind => DiscKind.Boring;
-        public BoringDisc(int playerId) : base(playerId) { }
+        public BoringDisc(Player owner) : base(owner) { }
 
         public override void OnPlaced(Board board, int row, int col, ChangeCell changeCells)
         {
@@ -56,17 +57,14 @@ namespace LineUpSeries
                     var cell = board.Cells[r][col];
                     if (cell != null && cell.Disc != null)
                     {
-                        int owner = cell.Disc.PlayerId;
-                        Player p = Player.GetById(owner);
-                        if (p != null)
+                        if (cell.Disc.Kind == DiscKind.Ordinary)
                         {
-                            p.ReturnDisc(1);
+                            cell.Disc.Owner.ReturnDisc(1);
                         }
                         cell.Disc = null;
                     }
                 }
-                int placedOwner = placedCell.Disc.PlayerId;
-                placedCell.Disc = new OrdinaryDisc(placedOwner);
+                placedCell.Disc = new BoringDisc(Owner);
                 board.ApplyGravity();
                 Cell changed = board.Cells[0][col];
                 changeCells.Add(changed);
@@ -77,7 +75,7 @@ namespace LineUpSeries
     public sealed class MagneticDisc : Disc
     {
         public override DiscKind Kind => DiscKind.Magnetic;
-        public MagneticDisc(int playerId) : base(playerId) { }
+        public MagneticDisc(Player owner) : base(owner) { }
         public override void OnPlaced(Board board, int row, int col, ChangeCell changeCells)
         {
             var placedCell = board.Cells[row][col];
@@ -87,7 +85,7 @@ namespace LineUpSeries
                 //row == 0, no place underneath
                 if (row == 0 || (row > 0 && board.Cells[row - 1][col].Owner == placedOwner))
                 {
-                    placedCell.Disc = new OrdinaryDisc(placedOwner);
+                    placedCell.Disc = new OrdinaryDisc(Owner);
                     changeCells.Add(placedCell);
                     return;
                 }
@@ -101,21 +99,21 @@ namespace LineUpSeries
                         cellToUp.Disc = cellToDown.Disc;
                         cellToDown.Disc = cellToUpDisc;
 
-                        placedCell.Disc = new OrdinaryDisc(placedOwner);
+                        placedCell.Disc = new OrdinaryDisc(Owner);
                         changeCells.Add(placedCell);
                         changeCells.Add(cellToDown);
                         changeCells.Add((cellToUp));
                         break;
                     }
                 }
-            }   
+            }
         }
     }
 
     public sealed class ExplosiveDisc : Disc
     {
         public override DiscKind Kind => DiscKind.Explosive;
-        public ExplosiveDisc(int playerId) : base(playerId) { }
+        public ExplosiveDisc(Player owner) : base(owner) { }
         public override void OnPlaced(Board board, int row, int col, ChangeCell changeCells)
         {
             for (int r = row - 1; r <= row + 1; r++)
@@ -134,14 +132,14 @@ namespace LineUpSeries
 
     public static class DiscFactory
     {
-        public static Disc Create(DiscKind kind, int playerId)
+        public static Disc Create(DiscKind kind, Player owner)
         {
             return kind switch
             {
-                DiscKind.Boring => new BoringDisc(playerId),
-                DiscKind.Magnetic => new MagneticDisc(playerId),
-                DiscKind.Explosive => new ExplosiveDisc(playerId),
-                _ => new OrdinaryDisc(playerId)
+                DiscKind.Boring => new BoringDisc(owner),
+                DiscKind.Magnetic => new MagneticDisc(owner),
+                DiscKind.Explosive => new ExplosiveDisc(owner),
+                _ => new OrdinaryDisc(owner)
             };
         }
     }
