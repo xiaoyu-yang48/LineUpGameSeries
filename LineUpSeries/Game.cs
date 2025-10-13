@@ -12,8 +12,8 @@ namespace LineUpSeries
     {
         public abstract string Name { get; }
         public Board Board { get; }
-        public Player? Player1 { get; private set; }
-        public Player? Player2 { get; private set; }
+        public Player Player1 { get; private set; }
+        public Player Player2 { get; private set; }
         public Player CurrentPlayer { get; private set; }
 
         protected readonly IWinRule WinRule;
@@ -96,8 +96,8 @@ namespace LineUpSeries
         {
             return new GameStateSnapshot(
                 Board,
-                Player.Player1,
-                Player.Player2,
+                Player1,
+                Player2,
                 CurrentPlayer.playerId,
                 MoveManager.CurrentTurn,
                 player1Win,
@@ -123,7 +123,8 @@ namespace LineUpSeries
                     var snapshotDisc = snapshot.BoardClone.Cells[r][c].Disc;
                     if (snapshotDisc != null)
                     {
-                        Board.Cells[r][c].Disc = DiscFactory.Create(snapshotDisc.Kind, snapshotDisc.PlayerId);
+                        var owner = GetPlayerById(snapshotDisc.PlayerId);
+                        Board.Cells[r][c].Disc = DiscFactory.Create(snapshotDisc.Kind, owner);
                     }
                     else
                     {
@@ -135,7 +136,7 @@ namespace LineUpSeries
             // Restore player inventories
             foreach (var playerId in new[] { 1, 2 })
             {
-                var player = Player.GetById(playerId);
+                var player = GetPlayerById(playerId);
                 var snapshotInventory = snapshot.PlayerInventories[playerId];
 
                 foreach (DiscKind kind in Enum.GetValues(typeof(DiscKind)))
@@ -145,7 +146,7 @@ namespace LineUpSeries
             }
 
             // Restore current player
-            CurrentPlayer = snapshot.CurrentPlayerId == 1 ? Player.Player1 : Player.Player2;
+            CurrentPlayer = snapshot.CurrentPlayerId == 1 ? Player1 : Player2;
         }
 
         /// Performs an undo operation, returning the game state and win flags
