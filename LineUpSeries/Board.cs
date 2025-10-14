@@ -8,9 +8,10 @@ namespace LineUpSeries
 {
     public class Board
     {
-        public int Rows { get; }
-        public int Cols { get; }
-        public Cell[][] Cells { get; }
+
+        public int Rows { get; private set; }
+        public int Cols { get; private set; }
+        public Cell[][] Cells { get; private set; }
 
         public Board(int rows, int cols) 
         { 
@@ -114,6 +115,26 @@ namespace LineUpSeries
         //rotate clockwise
         public void RotateCW()
         {
+            var rotated = new Cell[Cols][];
+            for (int r = 0; r < Cols; r++)
+            {
+                rotated[r] = new Cell[Rows];
+                for (int c = 0; c < Rows; c++)
+                {
+                    rotated[r][c] = new Cell(r, c);
+                    rotated[r][c].Disc = Cells[Rows - 1 - c][r].Disc;
+                }
+            }
+
+            // Reassign new dimensions
+            int oldRows = Rows;
+            int oldCols = Cols;
+
+            // Then update:
+            Rows = oldCols;
+            Cols = oldRows;
+            Cells = rotated;
         }
+
     }
 }

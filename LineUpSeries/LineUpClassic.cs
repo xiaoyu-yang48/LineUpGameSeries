@@ -8,13 +8,13 @@ using System.Threading.Tasks;
 
 namespace LineUpSeries
 {
-    public sealed class LineUpClassic : Game
+    public class LineUpClassic : Game
     {
         public override string Name => "LineUpClassic";
         private bool _isVsComputer;
         private bool _gameOver;
-        private bool _player1Win;
-        private bool _player2Win;
+        public bool _player1Win;
+        public bool _player2Win;
         private readonly Random _random = new Random();
 
         public LineUpClassic(Board board, Player currentPlayer, IWinRule winRule, IAIStrategy aiSrategy, bool isVsComputer) : base(board, currentPlayer, winRule, aiSrategy)
@@ -70,13 +70,13 @@ namespace LineUpSeries
                 }
             }
         }
-        static bool PromptVsMode()
+        protected static bool PromptVsMode()
         {
             while (true)
             {
                 Console.WriteLine("1: human vs human");
                 Console.WriteLine("2: human vs computer");
-                Console.WriteLine("Choose palyer mode:");
+                Console.WriteLine("Choose player mode:");
 
                 var mode = Console.ReadLine();
                 if (mode == null) return false;
@@ -246,7 +246,7 @@ namespace LineUpSeries
         {
         }
 
-        private void PrintBoard()
+        protected void PrintBoard()
         {
             int rows = Board.Rows;
             int cols = Board.Cols;
@@ -296,7 +296,7 @@ namespace LineUpSeries
             Console.WriteLine($"stock P{p.playerId}: Ordinary = {p.Inventory[DiscKind.Ordinary]}, Boring = {p.Inventory[DiscKind.Boring]}, Magnetic = {p.Inventory[DiscKind.Magnetic]}, Explosive = {p.Inventory[DiscKind.Explosive]}");
         }
 
-        private bool PromptHumanMove(out int col, out DiscKind kind)
+        protected virtual bool PromptHumanMove(out int col, out DiscKind kind)
         {
             col = -1;
             kind = DiscKind.Ordinary;
@@ -365,7 +365,7 @@ namespace LineUpSeries
             else Console.WriteLine("Draw End");
         }
 
-        private void AllocateInitialStockByBoardSize()
+        protected virtual void AllocateInitialStockByBoardSize()
         {
             int totalCells = Board.Rows * Board.Cols;
             int perPlayer = totalCells / 2;
