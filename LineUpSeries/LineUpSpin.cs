@@ -10,7 +10,12 @@ namespace LineUpSeries
     {
         public override string Name => "LineUpSpin";
 
+        public LineUpSpin(Board board, Player currentPlayer, IWinRule winRule, IAIStrategy aiSrategy) : base(board, currentPlayer, winRule, aiSrategy)
+        {
+        }
+
         public LineUpSpin() : base() { }
+
         public override void Launch()
         {
             Console.WriteLine("==== LineUpSpin ====");
