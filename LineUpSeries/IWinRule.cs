@@ -21,6 +21,7 @@ namespace LineUpSeries
         {
             int computed = (int)(board.Rows * board.Cols * 0.1);
             WinLen = Math.Clamp(computed, 4, Math.Min(board.Rows, board.Cols));
+            Console.WriteLine($"rows; {board.Rows}, cols: {board.Cols}, winLen:{WinLen}");
         }
 
         public ConnectWinRule(int winLen)

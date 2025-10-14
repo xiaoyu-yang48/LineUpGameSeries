@@ -11,15 +11,13 @@ namespace LineUpSeries
     public sealed class LineUpClassic : Game
     {
         public override string Name => "LineUpClassic";
-        private bool _isVsComputer;
         private bool _gameOver;
         private bool _player1Win;
         private bool _player2Win;
         private readonly Random _random = new Random();
 
-        public LineUpClassic(Board board, Player currentPlayer, IWinRule winRule, IAIStrategy aiSrategy, bool isVsComputer) : base(board, currentPlayer, winRule, aiSrategy)
+        public LineUpClassic(Board board, Player currentPlayer, IWinRule winRule, IAIStrategy aiSrategy) : base(board, currentPlayer, winRule, aiSrategy)
         {
-            _isVsComputer = isVsComputer;
         }
 
         //default constructor
@@ -54,9 +52,10 @@ namespace LineUpSeries
                     var player1 = new HumanPlayer(1);
                     Player player2 = isVsComputer ? new ComputerPlayer(ai, 2) : new HumanPlayer(2);
 
-                    var game = new LineUpClassic(board, player1, rule, ai, isVsComputer);
+                    var game = new LineUpClassic(board, player1, rule, ai);
                     game.SetPlayer1(player1);
                     game.SetPlayer2(player2);
+                    game.InitializeGameloop();
                     game.StartGameLoop();
 
                     Console.WriteLine("Enter q to quit");
@@ -144,7 +143,6 @@ namespace LineUpSeries
             _player2Win = false;
             AllocateInitialStockByBoardSize();
             PrintHelp();
-            PrintBoard();
 
             // Save initial state for undo/redo
             var initialSnapshot = CaptureGameState(_player1Win, _player2Win, _gameOver);
@@ -155,7 +153,7 @@ namespace LineUpSeries
 
         protected override void ExecuteGameTurn()
         {
-            if (CurrentPlayer == Player2 && _isVsComputer)
+            if (CurrentPlayer == Player2 && CurrentPlayer.IsComputer)
             {
                 var aiMove = AiSrategy.PickMove(Board, Player2);
                 if (aiMove == null)
@@ -166,7 +164,6 @@ namespace LineUpSeries
                 ApplyMove(aiMove.Col, aiMove.Disc.Kind);
                 return;
             }
-            PrintInventory(CurrentPlayer);
             int col;
             DiscKind kind;
             if (!PromptHumanMove(out col, out kind))
@@ -175,7 +172,6 @@ namespace LineUpSeries
                 return;
             }
             ApplyMove(col, kind);
-
         }
 
         private void ApplyMove(int col, DiscKind kindToUse)
@@ -231,7 +227,6 @@ namespace LineUpSeries
             if (_player1Win || _player2Win || Board.IsFull())
             {
                 _gameOver = true;
-                PrintBoard();
                 return;
             }
 
@@ -239,12 +234,8 @@ namespace LineUpSeries
             // Save state AFTER executing move and switching player
             var snapshot = CaptureGameState(_player1Win, _player2Win, _gameOver);
             MoveManager.SaveState(snapshot);
-            PrintBoard();
         }
 
-        private void PrintHelp()
-        {
-        }
 
         private void PrintBoard()
         {
@@ -303,18 +294,19 @@ namespace LineUpSeries
 
             while (true)
             {
+                PrintBoard();
+                PrintInventory(CurrentPlayer);
                 Console.WriteLine("Enter your move: e.g., 1B for BoringDisc in Column 1");
-                Console.WriteLine("Commands: Q: quit, H: help, Undo: undo, Redo: redo previous undone action");
+                Console.WriteLine("Commands: Q: quit, H: help, Undo: undo, Redo: redo, Save: save game, Load: load game");
                 var line = Console.ReadLine();
                 if (string.Equals(line, "q", StringComparison.OrdinalIgnoreCase)) return false;
-                if (string.Equals(line, "h", StringComparison.OrdinalIgnoreCase)) { PrintHelp(); PrintBoard(); continue; }
+                if (string.Equals(line, "h", StringComparison.OrdinalIgnoreCase)) { PrintHelp(); continue; }
 
                 // Handle undo
                 if (string.Equals(line, "undo", StringComparison.OrdinalIgnoreCase))
                 {
                     if (PerformUndo(out _player1Win, out _player2Win, out _gameOver))
                     {
-                        PrintBoard();
                         return true; // Exit to let game loop continue with restored player
                     }
                     continue;
@@ -325,8 +317,53 @@ namespace LineUpSeries
                 {
                     if (PerformRedo(out _player1Win, out _player2Win, out _gameOver))
                     {
-                        PrintBoard();
                         return true; // Exit to let game loop continue with restored player
+                    }
+                    continue;
+                }
+
+                // Handle save
+                if (string.Equals(line, "save", StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.Write("Enter filename to save (default: savegame.json): ");
+                    string? filename = Console.ReadLine()?.Trim();
+                    if (string.IsNullOrWhiteSpace(filename))
+                        filename = "savegame.json";
+
+                    try
+                    {
+                        FileManager.SaveGame(filename, this);
+                        Console.WriteLine($"Game saved successfully to {filename}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to save game: {ex.Message}");
+                    }
+                    continue;
+                }
+
+                // Handle load
+                if (string.Equals(line, "load", StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.Write("Enter filename to load (default: savegame.json): ");
+                    string? filename = Console.ReadLine()?.Trim();
+                    if (string.IsNullOrWhiteSpace(filename))
+                        filename = "savegame.json";
+
+                    try
+                    {
+                        var saveData = FileManager.LoadGame(filename);
+                        RestoreFromSaveData(saveData);
+                        Console.WriteLine($"Game loaded successfully from {filename}");
+                        return true; // Exit to let game loop continue with restored state
+                    }
+                    catch (System.IO.FileNotFoundException)
+                    {
+                        Console.WriteLine($"Save file not found: {filename}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to load game: {ex.Message}");
                     }
                     continue;
                 }
@@ -360,6 +397,7 @@ namespace LineUpSeries
 
         protected override void DisplayGameResult()
         {
+            PrintBoard();
             Console.WriteLine("Game Over");
             if (_player1Win || _player2Win) WinResult(_player1Win, _player2Win);
             else Console.WriteLine("Draw End");

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -37,7 +38,7 @@ namespace LineUpSeries
         { }
 
         //Template Pattern - Game launcher to provide menu and setup
-        public static void Run() 
+        public static void Run()
         {
             while (true)
             {
@@ -45,18 +46,82 @@ namespace LineUpSeries
                 Console.WriteLine("1: Classic");
                 Console.WriteLine("2: Basic");
                 Console.WriteLine("3: Spin");
-                Console.WriteLine("4: Exit");
+                Console.WriteLine("4: Load Game");
+                Console.WriteLine("5: Exit");
                 Console.WriteLine("Select Game Mode:");
                 var pick = Console.ReadLine();
                 if (pick == null) return;
                 pick = pick.Trim();
 
-                if (pick == "4") return;
+                if (pick == "5") return;
                 else if (pick == "1") { var classic = new LineUpClassic(); classic.Launch(); }
                 else if (pick == "2") { var basic = new LineUpBasic(); basic.Launch(); }
                 else if (pick == "3") { var spin = new LineUpSpin(); spin.Launch(); }
+                else if (pick == "4")
+                {
+                    LoadAndLaunchGame();
+                }
+                else Console.WriteLine("Invalid input. Please enter 1-5.");
+            }
+        }
 
-                else Console.WriteLine("Invalid input. Please enter 1-4.");
+        /// Loads a saved game and launches it
+        private static void LoadAndLaunchGame()
+        {
+            Console.Write("Enter filename to load (default: savegame.json): ");
+            string? filename = Console.ReadLine()?.Trim();
+            if (string.IsNullOrWhiteSpace(filename))
+                filename = "savegame.json";
+
+            try
+            {
+                var saveData = FileManager.LoadGame(filename);
+                Console.WriteLine($"Game Type: {saveData.GameName}");
+                Console.WriteLine($"Turn: {saveData.CurrentState.TurnNumber}");
+
+                // Create win rule with the saved WinLen
+                var winRule = new ConnectWinRule(saveData.WinLen);
+
+                // Create a temporary board to initialize the game (will be overwritten by RestoreFromSaveData)
+                var tempBoard = new Board(saveData.CurrentState.Board.Rows, saveData.CurrentState.Board.Cols);
+                var tempPlayer = new HumanPlayer(1);
+                var aiStrategy = new ImmeWinElseRandom(winRule, 2);
+
+                // Create appropriate game instance based on saved game type with correct WinRule
+                Game? game = saveData.GameName switch
+                {
+                    "LineUpClassic" => new LineUpClassic(tempBoard, tempPlayer, winRule, aiStrategy),
+                    "LineUpBasic" => new LineUpBasic(tempBoard, tempPlayer, winRule, aiStrategy),
+                    "LineUpSpin" => new LineUpSpin(tempBoard, tempPlayer, winRule, aiStrategy),
+                    _ => null
+                };
+
+                if (game == null)
+                {
+                    Console.WriteLine($"Unknown game type: {saveData.GameName}");
+                    return;
+                }
+
+                // Restore the game state
+                game.RestoreFromSaveData(saveData);
+
+                // Start the game loop from the restored state
+                game.StartGameLoop();
+
+                Console.WriteLine("Press any key to return to main menu...");
+                Console.ReadKey();
+            }
+            catch (System.IO.FileNotFoundException)
+            {
+                Console.WriteLine($"Save file not found: {filename}");
+                Console.WriteLine("Press any key to return to main menu...");
+                Console.ReadKey();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to load game: {ex.Message}");
+                Console.WriteLine("Press any key to return to main menu...");
+                Console.ReadKey();
             }
         }
 
@@ -66,8 +131,6 @@ namespace LineUpSeries
         //Template Pattern - Main game loop template - reference kehao-liu assignment 1
         public void StartGameLoop()
         {
-            InitializeGameloop();
-
             while (!EndGame())
             {
                 ExecuteGameTurn();
@@ -234,5 +297,80 @@ namespace LineUpSeries
                 Console.WriteLine($"Players 1 and 2 both aligned this turn. It's a draw!");
             }
         }
+
+        /// Captures the current game state snapshot for saving
+        /// Should be overridden by subclasses to provide proper win state
+        public virtual GameStateSnapshot CaptureCurrentSnapshot()
+        {
+            return CaptureGameState(false, false, false);
+        }
+
+        /// Gets the undo stack from MoveManager for saving
+        public Stack<GameStateSnapshot> GetUndoStack()
+        {
+            return MoveManager.GetUndoStackForSave();
+        }
+
+        /// Gets the redo stack from MoveManager for saving
+        public Stack<GameStateSnapshot> GetRedoStack()
+        {
+            return MoveManager.GetRedoStackForSave();
+        }
+
+        /// Restores the game from saved data
+        public void RestoreFromSaveData(GameSaveData saveData)
+        {
+            if (saveData == null)
+                throw new ArgumentNullException(nameof(saveData));
+
+            // Restore players (they need to be recreated with correct types)
+            Player1 = FileManager.ConvertDataToPlayer(saveData.Player1, WinRule);
+            Player2 = FileManager.ConvertDataToPlayer(saveData.Player2, WinRule);
+
+            // Restore current game state
+            var currentSnapshot = FileManager.ConvertDataToSnapshot(saveData.CurrentState, Player1, Player2);
+            RestoreGameState(currentSnapshot);
+
+            // Restore undo/redo stacks in MoveManager
+            var undoSnapshots = saveData.UndoStack
+                .Select(data => FileManager.ConvertDataToSnapshot(data, Player1, Player2))
+                .ToList();
+
+            var redoSnapshots = saveData.RedoStack
+                .Select(data => FileManager.ConvertDataToSnapshot(data, Player1, Player2))
+                .ToList();
+
+            MoveManager.RestoreStacks(undoSnapshots, redoSnapshots, saveData.CurrentState.TurnNumber);
+
+
+            Console.WriteLine($"Game state restored: Turn {MoveManager.CurrentTurn}, WinLen: {WinRule.WinLen}");
+        }
+
+        protected void PrintHelp()
+        {
+            Console.WriteLine("==== LineUp Game Help ====");
+            Console.WriteLine("\nGame Objective:");
+            Console.WriteLine($"  Align {WinLen} discs in a row (horizontally, vertically, or diagonally) to win!");
+            Console.WriteLine("\nHow to Play:");
+            Console.WriteLine("  Enter your move in format: [Column][DiscType]");
+            Console.WriteLine("  Example: 1O places an Ordinary disc in column 1");
+            Console.WriteLine("\nDisc Types:");
+            Console.WriteLine("  O - Ordinary: Standard disc");
+            Console.WriteLine("  B - Boring: Cannot be part of a winning line");
+            Console.WriteLine("  M - Magnetic: Pulls adjacent discs when placed");
+            Console.WriteLine("  E - Explosive: Clears surrounding discs when placed");
+            Console.WriteLine("\nBoard Symbols:");
+            Console.WriteLine("  Player 1: @ (Ordinary), B (Boring), M (Magnetic), E (Explosive)");
+            Console.WriteLine("  Player 2: # (Ordinary), b (Boring), m (Magnetic), e (Explosive)");
+            Console.WriteLine("\nCommands:");
+            Console.WriteLine("  Q or q     - Quit game");
+            Console.WriteLine("  H or h     - Show this help");
+            Console.WriteLine("  Undo       - Undo last turn (2 moves)");
+            Console.WriteLine("  Redo       - Redo last undone turn (2 moves)");
+            Console.WriteLine("  Save       - Save current game state");
+            Console.WriteLine("  Load       - Load saved game state");
+            Console.WriteLine("==========================\n");
+        }
+        
     }
 }
