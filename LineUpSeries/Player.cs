@@ -31,7 +31,6 @@ namespace LineUpSeries
         {
             if(!Inventory.TryGetValue(kind, out var count) || count <= 0) return false;
             Inventory[kind] = count - 1;
-            Console.WriteLine($"after consuming, player{playerId} stii has {Inventory[kind]}");
             return true;
         }
 

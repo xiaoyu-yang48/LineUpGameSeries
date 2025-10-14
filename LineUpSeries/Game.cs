@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -11,13 +12,16 @@ namespace LineUpSeries
     {
         public abstract string Name { get; }
         public Board Board { get; }
-        public Player? Player1 { get; private set; }
-        public Player? Player2 { get; private set; }
+        public Player Player1 { get; private set; }
+        public Player Player2 { get; private set; }
         public Player CurrentPlayer { get; private set; }
 
         protected readonly IWinRule WinRule;
         protected readonly IAIStrategy AiSrategy;
         public int WinLen => WinRule.WinLen;
+
+        // Move history management - using Singleton pattern
+        protected MoveManager MoveManager => MoveManager.Instance;
 
         protected Game (Board board, Player currentPlayer, IWinRule winRule, IAIStrategy aiSrategy)
         {
@@ -25,6 +29,7 @@ namespace LineUpSeries
             CurrentPlayer = currentPlayer;
             WinRule = winRule;
             AiSrategy = aiSrategy;
+            MoveManager.Clear();
         }
 
         //default constructor
@@ -78,11 +83,139 @@ namespace LineUpSeries
 
         public void SetPlayer1(Player p) => Player1 = p;
         public void SetPlayer2(Player p) => Player2 = p;
-        public Player? GetPlayerById(int id) => id == 1 ? Player1 : Player2;
+        public Player GetPlayerById(int id) => id == 1 ? Player1 : Player2;
 
         protected void SwitchPlayer()
         {
             CurrentPlayer = CurrentPlayer == Player1 ? Player2 : Player1;
+        }
+
+        /// Captures the current game state for undo/redo functionality
+        /// Must be called by subclasses before executing a move
+        protected GameStateSnapshot CaptureGameState(bool player1Win, bool player2Win, bool gameOver)
+        {
+            return new GameStateSnapshot(
+                Board,
+                Player1,
+                Player2,
+                CurrentPlayer.playerId,
+                MoveManager.CurrentTurn,
+                player1Win,
+                player2Win,
+                gameOver
+            );
+        }
+
+        /// Restores a game state from a snapshot
+        /// Must be implemented by subclasses to restore game-specific state
+        protected void RestoreGameState(GameStateSnapshot snapshot)
+        {
+            if (snapshot == null)
+            {
+                throw new Exception("something wrong: there are no snapshots detected.");
+            }
+
+            // Restore board state
+            for (int r = 0; r < Board.Rows; r++)
+            {
+                for (int c = 0; c < Board.Cols; c++)
+                {
+                    var snapshotDisc = snapshot.BoardClone.Cells[r][c].Disc;
+                    if (snapshotDisc != null)
+                    {
+                        var owner = GetPlayerById(snapshotDisc.PlayerId);
+                        Board.Cells[r][c].Disc = DiscFactory.Create(snapshotDisc.Kind, owner);
+                    }
+                    else
+                    {
+                        Board.Cells[r][c].Disc = null;
+                    }
+                }
+            }
+
+            // Restore player inventories
+            foreach (var playerId in new[] { 1, 2 })
+            {
+                var player = GetPlayerById(playerId);
+                var snapshotInventory = snapshot.PlayerInventories[playerId];
+
+                foreach (DiscKind kind in Enum.GetValues(typeof(DiscKind)))
+                {
+                    player.Inventory[kind] = snapshotInventory[kind];
+                }
+            }
+
+            // Restore current player
+            CurrentPlayer = snapshot.CurrentPlayerId == 1 ? Player1 : Player2;
+        }
+
+        /// Performs an undo operation, returning the game state and win flags
+        /// Undoes TWO moves to go back to the beginning of the previous turn (tricky)
+        /// Returns true if undo was successful
+        protected bool PerformUndo(out bool player1Win, out bool player2Win, out bool gameOver)
+        {
+            player1Win = false;
+            player2Win = false;
+            gameOver = false;
+
+            // Need to undo 2 moves to go back to beginning of previous turn
+            if (MoveManager.GetUndoCount() < 2)
+            {
+                Console.WriteLine("Not enough moves to undo.");
+                return false;
+            }
+
+            // Undo first move
+            var firstState = MoveManager.Undo();
+            if (firstState == null)
+            {
+                Console.WriteLine("Cannot undo to before the game started.");
+                return false;
+            }
+
+            // Undo second move
+            var secondState = MoveManager.Undo();
+            if (secondState == null)
+            {
+                Console.WriteLine("Cannot undo to before the game started.");
+                return false;
+            }
+
+            RestoreGameState(secondState);
+            player1Win = secondState.Player1Win;
+            player2Win = secondState.Player2Win;
+            gameOver = secondState.GameOver;
+
+            Console.WriteLine($"Undone to turn {MoveManager.CurrentTurn}.");
+            return true;
+        }
+
+        /// Performs a redo operation by N turns, returning the game state and win flags
+        /// Redoes TWO moves to go forward to the beginning of the next turn (tricky)
+        /// Returns true if redo was successful
+        protected bool PerformRedo(out bool player1Win, out bool player2Win, out bool gameOver)
+        {
+            player1Win = false;
+            player2Win = false;
+            gameOver = false;
+
+            // Need to redo 2 moves to go forward to beginning of next turn
+            if (MoveManager.GetRedoCount() < 2)
+            {
+                Console.WriteLine($"Cannot redo. Only {MoveManager.GetRedoCount()} moves available.");
+                return false;
+            }
+
+            // Redo first move
+            _ = MoveManager.Redo();
+            // Redo second move
+            var secondState = MoveManager.Redo();
+
+            RestoreGameState(secondState);
+            player1Win = secondState.Player1Win;
+            player2Win = secondState.Player2Win;
+            gameOver = secondState.GameOver;
+            return true;
         }
 
         public void WinResult(bool player1Win, bool player2Win)
