@@ -12,14 +12,21 @@ namespace LineUpSeries
     public abstract class Game
     {
         public abstract string Name { get; }
-        public Board Board { get; }
+        public Board Board { get; private set; }
         public Player Player1 { get; private set; }
         public Player Player2 { get; private set; }
         public Player CurrentPlayer { get; private set; }
 
+        public int TurnNumber { get; private set; }
+
         protected readonly IWinRule WinRule;
         protected readonly IAIStrategy AiSrategy;
         public int WinLen => WinRule.WinLen;
+
+        // Common game state fields
+        protected bool _gameOver;
+        protected bool _player1Win;
+        protected bool _player2Win;
 
         // Move history management - using Singleton pattern
         protected MoveManager MoveManager => MoveManager.Instance;
@@ -142,7 +149,6 @@ namespace LineUpSeries
         protected virtual void InitializeGameloop() { }
         protected virtual bool EndGame() => true;
         protected virtual void ExecuteGameTurn() { }
-        protected virtual void DisplayGameResult() { }
 
         public void SetPlayer1(Player p) => Player1 = p;
         public void SetPlayer2(Player p) => Player2 = p;
@@ -162,55 +168,68 @@ namespace LineUpSeries
                 Player1,
                 Player2,
                 CurrentPlayer.playerId,
-                MoveManager.CurrentTurn,
+                TurnNumber,
                 player1Win,
                 player2Win,
                 gameOver
             );
         }
 
-        /// Restores a game state from a snapshot
-        /// Must be implemented by subclasses to restore game-specific state
+        /// Restores a game state from a snapshot  
+        /// Restores the full game state (board, players, current turn) from a snapshot.
+        /// Safely handles board size mismatches (e.g., after rotation in LineUpSpin).
         protected void RestoreGameState(GameStateSnapshot snapshot)
         {
             if (snapshot == null)
-            {
-                throw new Exception("something wrong: there are no snapshots detected.");
-            }
+                throw new Exception("RestoreGameState: No snapshot provided.");
 
-            // Restore board state
-            for (int r = 0; r < Board.Rows; r++)
+            // --- Ensure board matches snapshot dimension
+            if (snapshot.BoardClone.Rows != Board.Rows || snapshot.BoardClone.Cols != Board.Cols)
             {
-                for (int c = 0; c < Board.Cols; c++)
+                // Replace the current board with the snapshot clone entirely.
+                Board = snapshot.BoardClone.Clone();
+            }
+            else
+            {
+                //Restore discs cell-by-cell
+                for (int r = 0; r < snapshot.BoardClone.Rows; r++)
                 {
-                    var snapshotDisc = snapshot.BoardClone.Cells[r][c].Disc;
-                    if (snapshotDisc != null)
+                    for (int c = 0; c < snapshot.BoardClone.Cols; c++)
                     {
-                        var owner = GetPlayerById(snapshotDisc.PlayerId);
-                        Board.Cells[r][c].Disc = DiscFactory.Create(snapshotDisc.Kind, owner);
-                    }
-                    else
-                    {
-                        Board.Cells[r][c].Disc = null;
+                        var snapshotDisc = snapshot.BoardClone.Cells[r][c].Disc;
+
+                        if (snapshotDisc != null)
+                        {
+                            var owner = GetPlayerById(snapshotDisc.PlayerId);
+                            Board.Cells[r][c].Disc = DiscFactory.Create(snapshotDisc.Kind, owner);
+                        }
+                        else
+                        {
+                            Board.Cells[r][c].Disc = null;
+                        }
                     }
                 }
             }
 
-            // Restore player inventories
+            //Restore player inventories
             foreach (var playerId in new[] { 1, 2 })
             {
+                if (!snapshot.PlayerInventories.TryGetValue(playerId, out var snapshotInventory))
+                    continue;
+
                 var player = GetPlayerById(playerId);
-                var snapshotInventory = snapshot.PlayerInventories[playerId];
 
                 foreach (DiscKind kind in Enum.GetValues(typeof(DiscKind)))
                 {
-                    player.Inventory[kind] = snapshotInventory[kind];
+                    if (snapshotInventory.TryGetValue(kind, out var count))
+                        player.Inventory[kind] = count;
                 }
             }
 
-            // Restore current player
+            //Restore current player
             CurrentPlayer = snapshot.CurrentPlayerId == 1 ? Player1 : Player2;
         }
+
 
         /// Performs an undo operation, returning the game state and win flags
         /// Undoes TWO moves to go back to the beginning of the previous turn (tricky)
@@ -222,7 +241,7 @@ namespace LineUpSeries
             gameOver = false;
 
             // Need to undo 2 moves to go back to beginning of previous turn
-            if (MoveManager.GetUndoCount() < 2)
+            if (MoveManager.GetUndoCount() <= 2)
             {
                 Console.WriteLine("Not enough moves to undo.");
                 return false;
@@ -249,7 +268,6 @@ namespace LineUpSeries
             player2Win = secondState.Player2Win;
             gameOver = secondState.GameOver;
 
-            Console.WriteLine($"Undone to turn {MoveManager.CurrentTurn}.");
             return true;
         }
 
@@ -311,12 +329,6 @@ namespace LineUpSeries
             return MoveManager.GetUndoStackForSave();
         }
 
-        /// Gets the redo stack from MoveManager for saving
-        public Stack<GameStateSnapshot> GetRedoStack()
-        {
-            return MoveManager.GetRedoStackForSave();
-        }
-
         /// Restores the game from saved data
         public void RestoreFromSaveData(GameSaveData saveData)
         {
@@ -336,14 +348,8 @@ namespace LineUpSeries
                 .Select(data => FileManager.ConvertDataToSnapshot(data, Player1, Player2))
                 .ToList();
 
-            var redoSnapshots = saveData.RedoStack
-                .Select(data => FileManager.ConvertDataToSnapshot(data, Player1, Player2))
-                .ToList();
-
-            MoveManager.RestoreStacks(undoSnapshots, redoSnapshots, saveData.CurrentState.TurnNumber);
-
-
-            Console.WriteLine($"Game state restored: Turn {MoveManager.CurrentTurn}, WinLen: {WinRule.WinLen}");
+            MoveManager.RestoreStacks(undoSnapshots, saveData.CurrentState.TurnNumber);
+            Console.WriteLine($"Game state restored: WinLen: {WinRule.WinLen}");
         }
 
         protected void PrintHelp()
@@ -371,6 +377,307 @@ namespace LineUpSeries
             Console.WriteLine("  Load       - Load saved game state");
             Console.WriteLine("==========================\n");
         }
-        
+
+        /// Common helper method for prompting player mode selection
+        protected static bool PromptVsMode()
+        {
+            while (true)
+            {
+                Console.WriteLine("1: human vs human");
+                Console.WriteLine("2: human vs computer");
+                Console.WriteLine("Choose player mode:");
+
+                var mode = Console.ReadLine();
+                if (mode == null) return false;
+                mode = mode.Trim();
+                if (mode == "1") return false;
+                if (mode == "2") return true;
+                Console.WriteLine("Invalid input");
+            }
+        }
+
+        /// Common helper method for printing the board
+        protected void PrintBoard()
+        {
+            int rows = Board.Rows;
+            int cols = Board.Cols;
+
+            for (int r = rows - 1; r >= 0; r--)
+            {
+                for (int c = 0; c < cols; c++)
+                {
+                    char discSymbol;
+
+                    Cell cell = Board.GetCell(r, c);
+                    var disc = cell.Disc;
+                    if (disc != null)
+                    {
+                        DiscKind kind = disc.Kind;
+                        int owner = disc.PlayerId;
+
+                        discSymbol = (owner, kind) switch
+                        {
+                            (1, DiscKind.Ordinary) => '@',
+                            (1, DiscKind.Boring) => 'B',
+                            (1, DiscKind.Magnetic) => 'M',
+                            (1, DiscKind.Explosive) => 'E',
+                            (2, DiscKind.Ordinary) => '#',
+                            (2, DiscKind.Boring) => 'b',
+                            (2, DiscKind.Magnetic) => 'm',
+                            (2, DiscKind.Explosive) => 'e',
+                            _ => ' '
+                        };
+                    }
+                    else
+                    {
+                        discSymbol = ' ';
+                    }
+
+                    Console.Write($"|{discSymbol}");
+                }
+                Console.WriteLine("|");
+            }
+            for (int c = 1; c <= cols; c++)
+            {
+                Console.Write($" {c}");
+            }
+            Console.WriteLine();
+        }
+
+        /// Common method for prompting human move with command handling
+        /// Subclasses can override ParseMoveInput to customize input parsing
+        protected virtual bool PromptHumanMove(out int col, out DiscKind kind, out string cmd)
+        {
+            col = -1;
+            kind = DiscKind.Ordinary;
+
+            while (true)
+            {
+                PrintBoard();
+                PrintMovePrompt();
+
+                cmd = Console.ReadLine();
+
+                // Handle quit
+                if (string.Equals(cmd, "q", StringComparison.OrdinalIgnoreCase))
+                    return false;
+
+                // Handle help
+                if (string.Equals(cmd, "h", StringComparison.OrdinalIgnoreCase))
+                {
+                    PrintHelp();
+                    continue;
+                }
+
+                // Handle undo
+                if (string.Equals(cmd, "undo", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (PerformUndo(out _player1Win, out _player2Win, out _gameOver))
+                    {
+                        return true; // Exit to let game loop continue with restored player
+                    }
+                    continue;
+                }
+
+                // Handle redo
+                if (string.Equals(cmd, "redo", StringComparison.OrdinalIgnoreCase))
+                {
+                    if (PerformRedo(out _player1Win, out _player2Win, out _gameOver))
+                    {
+                        return true; // Exit to let game loop continue with restored player
+                    }
+                    continue;
+                }
+
+                // Handle save
+                if (string.Equals(cmd, "save", StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.Write("Enter filename to save (default: savegame.json): ");
+                    string? filename = Console.ReadLine()?.Trim();
+                    if (string.IsNullOrWhiteSpace(filename))
+                        filename = "savegame.json";
+
+                    try
+                    {
+                        FileManager.SaveGame(filename, this);
+                        Console.WriteLine($"Game saved successfully to {filename}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to save game: {ex.Message}");
+                    }
+                    continue;
+                }
+
+                // Handle load
+                if (string.Equals(cmd, "load", StringComparison.OrdinalIgnoreCase))
+                {
+                    Console.Write("Enter filename to load (default: savegame.json): ");
+                    string? filename = Console.ReadLine()?.Trim();
+                    if (string.IsNullOrWhiteSpace(filename))
+                        filename = "savegame.json";
+
+                    try
+                    {
+                        var saveData = FileManager.LoadGame(filename);
+                        RestoreFromSaveData(saveData);
+                        Console.WriteLine($"Game loaded successfully from {filename}");
+                        return true; // Exit to let game loop continue with restored state
+                    }
+                    catch (System.IO.FileNotFoundException)
+                    {
+                        Console.WriteLine($"Save file not found: {filename}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Failed to load game: {ex.Message}");
+                    }
+                    continue;
+                }
+
+                // Parse the move input (delegate to subclass for customization)
+                if (ParseMoveInput(cmd, out col, out kind))
+                {
+                    return true;
+                }
+            }
+        }
+
+        /// Override this in subclasses to customize move input parsing
+        /// Returns true if parsing succeeded, false otherwise
+        protected virtual bool ParseMoveInput(string? line, out int col, out DiscKind kind)
+        {
+            col = -1;
+            kind = DiscKind.Ordinary;
+
+            if (string.IsNullOrWhiteSpace(line))
+            {
+                Console.WriteLine("Empty input");
+                return false;
+            }
+
+            line = line.Trim();
+
+            // Default: expect format like "1B" (column + disc type)
+            char last = line[line.Length - 1];
+            if (!char.IsLetter(last))
+            {
+                Console.WriteLine("Wrong format");
+                return false;
+            }
+
+            string numPart = line.Substring(0, line.Length - 1);
+            if (!int.TryParse(numPart, out int colInput))
+            {
+                Console.WriteLine("Invalid column number");
+                return false;
+            }
+
+            int promptCol = colInput - 1;
+            if (promptCol < 0 || promptCol >= Board.Cols)
+            {
+                Console.WriteLine("Column number out of range");
+                return false;
+            }
+
+            char kindch = char.ToUpperInvariant(last);
+            kind = kindch switch
+            {
+                'O' => DiscKind.Ordinary,
+                'B' => DiscKind.Boring,
+                'M' => DiscKind.Magnetic,
+                'E' => DiscKind.Explosive,
+                _ => DiscKind.Ordinary
+            };
+
+            col = promptCol;
+            return true;
+        }
+
+        /// Override this to customize the move prompt message
+        protected virtual void PrintMovePrompt()
+        {
+            PrintInventory(CurrentPlayer);
+            Console.WriteLine("Enter your move: e.g., 1B for BoringDisc in Column 1");
+            Console.WriteLine("Commands: Q: quit, H: help, Undo: undo, Redo: redo, Save: save game, Load: load game");
+        }
+
+        /// Override this to customize inventory display
+        protected virtual void PrintInventory(Player p)
+        {
+            Console.WriteLine($"stock P{p.playerId}: Ordinary = {p.Inventory[DiscKind.Ordinary]}, Boring = {p.Inventory[DiscKind.Boring]}, Magnetic = {p.Inventory[DiscKind.Magnetic]}, Explosive = {p.Inventory[DiscKind.Explosive]}");
+        }
+
+        /// Common helper method for applying a move
+        protected bool ApplyMove(int col, DiscKind kindToUse)
+        {
+            if (!_player1Win && !_player2Win && Board.IsFull())
+            {
+                _gameOver = true;
+                return false;
+            }
+
+            if (!Board.IsColumnLegal(col))
+            {
+                Console.WriteLine("Column is full or illegal, please try again.");
+                return false;
+            }
+
+            // Check if player has the disc kind before consuming
+            if (!CurrentPlayer.CanUse(kindToUse))
+            {
+                Console.WriteLine("Insufficient disc type. Please choose another disc kind.");
+                return false;
+            }
+
+            // Consume the disc first
+            if (!CurrentPlayer.TryConsume(kindToUse))
+            {
+                Console.WriteLine("Failed to consume disc.");
+                return false;
+            }
+
+            // Create and place the disc
+            var disc = DiscFactory.Create(kindToUse, CurrentPlayer);
+            var move = new PlaceDiscMove(col, disc);
+            move.Execute(Board);
+            if (!move.WasPlaced)
+            {
+                Console.WriteLine("Failed to place a disc. Please retry.");
+                // Return the disc back to inventory since placement failed
+                CurrentPlayer.AddStock(kindToUse, 1);
+                return false;
+            }
+
+            //wincheck
+            var rule = (WinRule as ConnectWinRule) ?? new ConnectWinRule(WinLen);
+            var change = move.ChangeCells;
+            if (change == null)
+            {
+                return true;
+            }
+            rule.WinCheck(Board, change, out _player1Win, out _player2Win);
+
+            if (_player1Win || _player2Win || Board.IsFull())
+            {
+                _gameOver = true;
+                return true;
+            }
+
+            TurnNumber++;
+
+            SwitchPlayer();
+            // Save state AFTER executing move and switching player
+            var snapshot = CaptureGameState(_player1Win, _player2Win, _gameOver);
+            MoveManager.SaveState(snapshot);
+            return true;
+        }
+        protected virtual void DisplayGameResult()
+        {
+            PrintBoard();
+            Console.WriteLine("Game Over");
+            if (_player1Win || _player2Win) WinResult(_player1Win, _player2Win);
+            else if (_player1Win == true && _player2Win == true) Console.WriteLine("Draw End");
+        }
     }
 }
