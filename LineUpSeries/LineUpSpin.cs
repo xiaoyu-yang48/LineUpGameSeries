@@ -148,12 +148,11 @@ namespace LineUpSeries
                 Console.WriteLine("\n*** The board spins! ***\n");
                 Board.RotateCW();
                 Board.ApplyGravity();
-                PrintBoard();
                 // Save a snapshot after rotation so Undo can restore it
                 var snapshot = CaptureGameState(false, false, false);
                 MoveManager.SaveState(snapshot);
-
             }
+            PrintBoard();
         }
 
 
