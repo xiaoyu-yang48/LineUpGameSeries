@@ -7,11 +7,9 @@ using System.Threading.Tasks;
 
 namespace LineUpSeries
 {
-    public class LineUpSpin : LineUpClassic
+    public class LineUpSpin : Game
     {
         public override string Name => "LineUpSpin";
-        private int _turnCounter = 0;
-
         public LineUpSpin(Board board, Player currentPlayer, IWinRule winRule, IAIStrategy aiSrategy) : base(board, currentPlayer, winRule, aiSrategy)
         {
         }
@@ -63,8 +61,24 @@ namespace LineUpSeries
             }
         }
 
+        // Game template method implementations ---
+        protected override void InitializeGameloop()
+        {
+            _gameOver = false;
+            _player1Win = false;
+            _player2Win = false;
+            AllocateInitialStockByBoardSize();
+            PrintHelp();
+
+            // Save initial state for undo/redo
+            var initialSnapshot = CaptureGameState(_player1Win, _player2Win, _gameOver);
+            MoveManager.SaveState(initialSnapshot);
+        }
+
+        protected override bool EndGame() => _gameOver;
+
         // --- Only ordinary discs ---
-        protected override void AllocateInitialStockByBoardSize()
+        private void AllocateInitialStockByBoardSize()
         {
             // number of available discs
             int totalCells = Board.Rows * Board.Cols;
@@ -75,90 +89,82 @@ namespace LineUpSeries
             Player2.AddStock(DiscKind.Ordinary, perPlayer);
         }
 
-        // --- Prompt Move ---
-        protected override bool PromptHumanMove(out int col, out DiscKind kind)
+        // --- Customize move prompt for LineUpSpin ---
+        protected override void PrintMovePrompt()
+        {
+            PrintInventory(CurrentPlayer);
+            Console.WriteLine("Enter your move (column number only). Every 5 turns the board spins!");
+            Console.WriteLine("Commands: Q: quit, H: help, Undo: undo, Redo: redo, Save: save game, Load: load game");
+        }
+
+        // Customize input parsing to only accept column number 
+        protected override bool ParseMoveInput(string? line, out int col, out DiscKind kind)
         {
             col = -1;
-            kind = DiscKind.Ordinary;
+            kind = DiscKind.Ordinary; // Always Ordinary for LineUpSpin
 
-            while (true)
+            if (string.IsNullOrWhiteSpace(line))
             {
-                Console.WriteLine("Enter your move (column number only). Every 5 turns the board spins!");
-                Console.WriteLine("Commands: Q: quit, Undo, Redo");
-
-                var line = Console.ReadLine();
-                if (string.Equals(line, "q", StringComparison.OrdinalIgnoreCase))
-                    return false;
-
-                if (string.Equals(line, "undo", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (PerformUndo(out _, out _, out _))
-                    {
-                        PrintBoard();
-                        return true;
-                    }
-                    continue;
-                }
-
-                if (string.Equals(line, "redo", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (PerformRedo(out _, out _, out _))
-                    {
-                        PrintBoard();
-                        return true;
-                    }
-                    continue;
-                }
-
-                if (string.IsNullOrWhiteSpace(line))
-                {
-                    Console.WriteLine("Empty input.");
-                    continue;
-                }
-
-                if (!int.TryParse(line.Trim(), out int colInput))
-                {
-                    Console.WriteLine("Invalid column number.");
-                    continue;
-                }
-
-                col = colInput - 1;
-                if (col < 0 || col >= Board.Cols)
-                {
-                    Console.WriteLine("Column number out of range.");
-                    continue;
-                }
-
-                kind = DiscKind.Ordinary;
-                return true;
+                Console.WriteLine("Empty input.");
+                return false;
             }
+
+            if (!int.TryParse(line.Trim(), out int colInput))
+            {
+                Console.WriteLine("Invalid column number.");
+                return false;
+            }
+
+            col = colInput - 1;
+            if (col < 0 || col >= Board.Cols)
+            {
+                Console.WriteLine("Column number out of range.");
+                return false;
+            }
+
+            return true;
         }
 
         // --- clockwise rotation logic every 5 turns ---
         protected override void ExecuteGameTurn()
         {
-            base.ExecuteGameTurn();  // Run the normal turn logic
+            string cmd = "";
+            // Execute player move
+            if (CurrentPlayer == Player2 && CurrentPlayer.IsComputer)
+            {
+                var aiMove = AiSrategy.PickMove(Board, Player2);
+                if (aiMove == null)
+                {
+                    _gameOver = true;
+                    return;
+                }
+                ApplyMove(aiMove.Col, aiMove.Disc.Kind);
+            }
+            else
+            {
+                int col;
+                DiscKind kind;
+                if (!PromptHumanMove(out col, out kind, out cmd))
+                {
+                    _gameOver = true;
+                    return;
+                }
+                ApplyMove(col, kind);
+            }
 
             // If the game is already over, skip rotation
             if (Board == null || Board.IsFull()) return;
+            Console.WriteLine(cmd.ToLower());
 
-            _turnCounter++;
-            if (_turnCounter % 5 == 0)
+            if (TurnNumber % 5 == 0)
             {
+                Console.Write("\n*** Before the board spins: ***\n\n");
+                PrintBoard();
                 Console.WriteLine("\n*** The board spins! ***\n");
                 Board.RotateCW();
                 Board.ApplyGravity();
-                // Save a snapshot after rotation so Undo can restore it
-                var snapshot = CaptureGameState(false, false, false);
-                MoveManager.SaveState(snapshot);
             }
-            PrintBoard();
         }
-
-
-
-
-
     }
 }
 
