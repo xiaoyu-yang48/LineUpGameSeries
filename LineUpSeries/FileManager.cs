@@ -25,6 +25,7 @@ namespace LineUpSeries
                 {
                     GameName = game.Name,
                     WinLen = game.WinLen,
+                    TurnNumber = game.TurnNumber,
                     CurrentState = ConvertSnapshotToData(game.CaptureCurrentSnapshot()),
                     Player1 = ConvertPlayerToData(game.Player1),
                     Player2 = ConvertPlayerToData(game.Player2),
@@ -97,7 +98,8 @@ namespace LineUpSeries
                 CurrentPlayerId = snapshot.CurrentPlayerId,
                 Player1Win = snapshot.Player1Win,
                 Player2Win = snapshot.Player2Win,
-                GameOver = snapshot.GameOver
+                GameOver = snapshot.GameOver,
+                TurnNumber = snapshot.TurnNumber
             };
         }
 
