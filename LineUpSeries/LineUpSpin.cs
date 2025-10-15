@@ -14,8 +14,8 @@ namespace LineUpSeries
 
         public LineUpSpin() : base() { }
 
-        public LineUpSpin(Board board, Player currentPlayer, IWinRule winRule, IAIStrategy aiStrategy, bool isVsComputer)
-            : base(board, currentPlayer, winRule, aiStrategy, isVsComputer)
+        public LineUpSpin(Board board, Player currentPlayer, IWinRule winRule, IAIStrategy aiStrategy)
+            : base(board, currentPlayer, winRule, aiStrategy)
         {
         }
 
@@ -30,7 +30,6 @@ namespace LineUpSeries
                 var sel = Console.ReadLine()?.Trim();
 
                 if (sel == "2") return;
-
                 if (sel == "1")
                 {
                     bool isVsComputer = PromptVsMode();
@@ -46,18 +45,21 @@ namespace LineUpSeries
                     var player1 = new HumanPlayer(1);
                     Player player2 = isVsComputer ? new ComputerPlayer(ai, 2) : new HumanPlayer(2);
 
-                    var game = new LineUpSpin(board, player1, rule, ai, isVsComputer);
+                    var game = new LineUpSpin(board, player1, rule, ai);
                     game.SetPlayer1(player1);
                     game.SetPlayer2(player2);
+                    game.InitializeGameloop();
                     game.StartGameLoop();
 
                     Console.WriteLine("Enter q to quit");
+                    var cont = Console.ReadLine();
                     if (string.Equals(Console.ReadLine(), "q", StringComparison.OrdinalIgnoreCase))
                         return;
                 }
                 else
                 {
                     Console.WriteLine("Invalid selection.");
+                    continue;
                 }
             }
         }
@@ -148,11 +150,18 @@ namespace LineUpSeries
                 Board.RotateCW();
                 Board.ApplyGravity();
                 PrintBoard();
+                // Save a snapshot after rotation so Undo can restore it
+                var snapshot = CaptureGameState(false, false, false);
+                MoveManager.SaveState(snapshot);
+
             }
         }
 
 
 
+
+
     }
 }
+
 

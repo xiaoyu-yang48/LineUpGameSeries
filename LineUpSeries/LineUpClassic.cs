@@ -17,13 +17,16 @@ namespace LineUpSeries
         public bool _player2Win;
         private readonly Random _random = new Random();
 
-        public LineUpClassic(Board board, Player currentPlayer, IWinRule winRule, IAIStrategy aiSrategy, bool isVsComputer) : base(board, currentPlayer, winRule, aiSrategy)
+
+
+        public LineUpClassic(Board board, Player currentPlayer, IWinRule winRule, IAIStrategy aiSrategy) : base(board, currentPlayer, winRule, aiSrategy)
         {
-            _isVsComputer = isVsComputer;
         }
 
+
+
         //default constructor
-        public LineUpClassic() : base() 
+        public LineUpClassic() : base()
         {
         }
 
@@ -54,9 +57,10 @@ namespace LineUpSeries
                     var player1 = new HumanPlayer(1);
                     Player player2 = isVsComputer ? new ComputerPlayer(ai, 2) : new HumanPlayer(2);
 
-                    var game = new LineUpClassic(board, player1, rule, ai, isVsComputer);
+                    var game = new LineUpClassic(board, player1, rule, ai);
                     game.SetPlayer1(player1);
                     game.SetPlayer2(player2);
+                    game.InitializeGameloop();
                     game.StartGameLoop();
 
                     Console.WriteLine("Enter q to quit");
@@ -331,7 +335,7 @@ namespace LineUpSeries
                     continue;
                 }
 
-                if (string.IsNullOrWhiteSpace(line)) { Console.WriteLine("Empty input"); continue;}
+                if (string.IsNullOrWhiteSpace(line)) { Console.WriteLine("Empty input"); continue; }
 
                 line = line.Trim();
 
@@ -369,7 +373,7 @@ namespace LineUpSeries
         {
             int totalCells = Board.Rows * Board.Cols;
             int perPlayer = totalCells / 2;
-            var specials = new List<DiscKind> { DiscKind.Boring, DiscKind.Magnetic, DiscKind.Explosive};
+            var specials = new List<DiscKind> { DiscKind.Boring, DiscKind.Magnetic, DiscKind.Explosive };
 
             var p1s1 = specials[_random.Next(specials.Count)];
             DiscKind p1s2;

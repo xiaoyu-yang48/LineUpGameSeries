@@ -13,8 +13,8 @@ namespace LineUpSeries
         public int Cols { get; private set; }
         public Cell[][] Cells { get; private set; }
 
-        public Board(int rows, int cols) 
-        { 
+        public Board(int rows, int cols)
+        {
             Rows = rows;
             Cols = cols;
             Cells = new Cell[rows][];
@@ -122,7 +122,8 @@ namespace LineUpSeries
                 for (int c = 0; c < Rows; c++)
                 {
                     rotated[r][c] = new Cell(r, c);
-                    rotated[r][c].Disc = Cells[Rows - 1 - c][r].Disc;
+                    rotated[r][c].Disc = Cells[c][Cols - 1 - r].Disc;
+
                 }
             }
 

@@ -130,5 +130,38 @@ namespace LineUpSeries
             _redoStack.Clear();
             CurrentTurn = 0;
         }
+
+        /// Gets the undo stack for saving (returns a copy to prevent external modification)
+        public Stack<GameStateSnapshot> GetUndoStackForSave()
+        {
+            return new Stack<GameStateSnapshot>(_undoStack);
+        }
+
+        /// Gets the redo stack for saving (returns a copy to prevent external modification)
+        public Stack<GameStateSnapshot> GetRedoStackForSave()
+        {
+            return new Stack<GameStateSnapshot>(_redoStack);
+        }
+
+        /// Restores the undo and redo stacks from saved data
+        public void RestoreStacks(List<GameStateSnapshot> undoList, List<GameStateSnapshot> redoList, int turnNumber)
+        {
+            _undoStack.Clear();
+            _redoStack.Clear();
+
+            // Restore undo stack (reverse the list to get correct stack order)
+            foreach (var snapshot in undoList.AsEnumerable().Reverse())
+            {
+                _undoStack.Push(snapshot);
+            }
+
+            // Restore redo stack (reverse the list to get correct stack order)
+            foreach (var snapshot in redoList.AsEnumerable().Reverse())
+            {
+                _redoStack.Push(snapshot);
+            }
+
+            CurrentTurn = turnNumber;
+        }
     }
 }
