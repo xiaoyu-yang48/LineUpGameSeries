@@ -14,8 +14,8 @@ namespace LineUpSeries
         private bool _player2Win;
 
         // Fixed grid size for LineUpBasic
-        private const int FixedRows = 6;
-        private const int FixedCols = 7;
+        private const int FixedRows = 8;
+        private const int FixedCols = 9;
         private const int WinLength = 4;
 
         public LineUpBasic(Board board, Player currentPlayer, IWinRule winRule, IAIStrategy aiStrategy) : base(board, currentPlayer, winRule, aiStrategy)
@@ -47,7 +47,7 @@ namespace LineUpSeries
 
                     var board = new Board(FixedRows, FixedCols);
                     var rule = new ConnectWinRule(WinLength);
-                    rule.SetWinLen(board);
+                    //rule.SetWinLen(board);
                     var ai = new ImmeWinElseRandom(rule, 2);
 
                     var player1 = new HumanPlayer(1);
@@ -92,7 +92,7 @@ namespace LineUpSeries
             _gameOver = false;
             _player1Win = false;
             _player2Win = false;
-            AllocateInitialStock();
+            AllocateInitialStockByBoardSize();
             PrintHelp();
 
             // Save initial state for undo/redo
@@ -327,7 +327,7 @@ namespace LineUpSeries
             else Console.WriteLine("Draw End");
         }
 
-        private void AllocateInitialStock()
+        private void AllocateInitialStockByBoardSize()
         {
             int totalCells = Board.Rows * Board.Cols;
             int perPlayer = totalCells / 2;
