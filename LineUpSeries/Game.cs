@@ -267,6 +267,7 @@ namespace LineUpSeries
             player1Win = secondState.Player1Win;
             player2Win = secondState.Player2Win;
             gameOver = secondState.GameOver;
+            TurnNumber = secondState.TurnNumber;
 
             return true;
         }
@@ -296,6 +297,7 @@ namespace LineUpSeries
             player1Win = secondState.Player1Win;
             player2Win = secondState.Player2Win;
             gameOver = secondState.GameOver;
+            TurnNumber = secondState.TurnNumber;
             return true;
         }
 
@@ -334,6 +336,9 @@ namespace LineUpSeries
         {
             if (saveData == null)
                 throw new ArgumentNullException(nameof(saveData));
+
+            // Restore turnNumber which is important to spin game
+            TurnNumber = saveData.TurnNumber;
 
             // Restore players (they need to be recreated with correct types)
             Player1 = FileManager.ConvertDataToPlayer(saveData.Player1, WinRule);

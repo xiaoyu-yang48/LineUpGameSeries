@@ -13,6 +13,7 @@ namespace LineUpSeries
     {
         public string GameName { get; set; } = "";
         public int WinLen { get; set; }
+        public int TurnNumber { get; set; } = 0;
         public SnapshotData CurrentState { get; set; } = new SnapshotData();
         public PlayerData Player1 { get; set; } = new PlayerData();
         public PlayerData Player2 { get; set; } = new PlayerData();
