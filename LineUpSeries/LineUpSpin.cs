@@ -12,12 +12,11 @@ namespace LineUpSeries
         public override string Name => "LineUpSpin";
         private int _turnCounter = 0;
 
-        public LineUpSpin() : base() { }
-
-        public LineUpSpin(Board board, Player currentPlayer, IWinRule winRule, IAIStrategy aiStrategy)
-            : base(board, currentPlayer, winRule, aiStrategy)
+        public LineUpSpin(Board board, Player currentPlayer, IWinRule winRule, IAIStrategy aiSrategy) : base(board, currentPlayer, winRule, aiSrategy)
         {
         }
+
+        public LineUpSpin() : base() { }
 
         public override void Launch()
         {

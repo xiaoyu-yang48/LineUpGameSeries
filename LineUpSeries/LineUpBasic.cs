@@ -14,7 +14,6 @@ namespace LineUpSeries
         {
         }
 
-
         public LineUpBasic() : base() { }
 
         public override void Launch()
