@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+
 
 
 namespace LineUpSeries
@@ -156,14 +156,46 @@ namespace LineUpSeries
             if (Board == null || Board.IsFull()) return;
             Console.WriteLine(cmd.ToLower());
 
-            if (TurnNumber % 5 == 0)
+            if (TurnNumber != 0 && TurnNumber % 5 == 0)
             {
                 Console.Write("\n*** Before the board spins: ***\n\n");
                 PrintBoard();
                 Console.WriteLine("\n*** The board spins! ***\n");
                 Board.RotateCW();
                 Board.ApplyGravity();
+
+                // Check for wins after spinning by examining all cells on the board
+                CheckAllCellsForWin();
+
+                // If someone won after the spin, mark game as over
+                if (_player1Win || _player2Win)
+                {
+                    _gameOver = true;
+                }
             }
+        }
+
+        /// Checks all cells on the board for win conditions
+        /// This is only necessary after spinning because discs move to new positions
+        private void CheckAllCellsForWin()
+        {
+            var rule = (WinRule as ConnectWinRule) ?? new ConnectWinRule(WinLen);
+
+            // Create a ChangeCell and adding all cells
+            var changeCells = new ChangeCell();
+            for (int r = 0; r < Board.Rows; r++)
+            {
+                for (int c = 0; c < Board.Cols; c++)
+                {
+                    var cell = Board.Cells[r][c];
+                    if (cell.Disc != null)
+                    {
+                        changeCells.Add(cell);
+                    }
+                }
+            }
+
+            rule.WinCheck(Board, changeCells, out _player1Win, out _player2Win);
         }
     }
 }
