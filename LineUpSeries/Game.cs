@@ -231,8 +231,8 @@ namespace LineUpSeries
         }
 
 
-        /// Performs an undo operation, returning the game state and win flags
-        /// Undoes TWO moves to go back to the beginning of the previous turn (tricky)
+        /// Performs an undo operation
+        /// Undoes ONE move to go back to the beginning of the previous turn 
         /// Returns true if undo was successful
         protected bool PerformUndo(out bool player1Win, out bool player2Win, out bool gameOver)
         {
@@ -240,16 +240,16 @@ namespace LineUpSeries
             player2Win = false;
             gameOver = false;
 
-            // Need to undo 2 moves to go back to beginning of previous turn
-            if (MoveManager.GetUndoCount() <= 2)
+            // Need to undo move to go back to beginning of previous turn
+            if (MoveManager.GetUndoCount() <= 1)
             {
                 Console.WriteLine("Not enough moves to undo.");
                 return false;
             }
 
-            // Undo first move
-            var firstState = MoveManager.Undo();
-            if (firstState == null)
+            // Undo move
+            var previousState = MoveManager.Undo();
+            if (previousState == null)
             {
                 Console.WriteLine("Cannot undo to before the game started.");
                 return false;
@@ -269,6 +269,9 @@ namespace LineUpSeries
             gameOver = secondState.GameOver;
             TurnNumber = secondState.TurnNumber;
 
+            // Restore correct player
+            CurrentPlayer = GetPlayerById(previousState.CurrentPlayerId);
+            Console.WriteLine($"Undid one move. It's now Player {CurrentPlayer.playerId}'s turn.");
             return true;
         }
 
@@ -281,17 +284,27 @@ namespace LineUpSeries
             player2Win = false;
             gameOver = false;
 
-            // Need to redo 2 moves to go forward to beginning of next turn
-            if (MoveManager.GetRedoCount() < 2)
+            // Need to redo ONE move
+            if (MoveManager.GetRedoCount() < 1)
             {
-                Console.WriteLine($"Cannot redo. Only {MoveManager.GetRedoCount()} moves available.");
+                Console.WriteLine($"Cannot redo");
                 return false;
             }
+            // Redo the next move
+            var nextState = MoveManager.Redo();
+            if (nextState == null)
+            {
+                Console.WriteLine("Cannot redo any further.");
+                return false;
+            }
+            // Restore next state
+            RestoreGameState(nextState);
+            player1Win = nextState.Player1Win;
+            player2Win = nextState.Player2Win;
+            gameOver = nextState.GameOver;
 
-            // Redo first move
-            _ = MoveManager.Redo();
-            // Redo second move
-            var secondState = MoveManager.Redo();
+            // Restore correct player
+            CurrentPlayer = GetPlayerById(nextState.CurrentPlayerId);
 
             RestoreGameState(secondState);
             player1Win = secondState.Player1Win;
