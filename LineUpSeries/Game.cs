@@ -255,10 +255,19 @@ namespace LineUpSeries
                 return false;
             }
 
-            RestoreGameState(previousState);
-            player1Win = previousState.Player1Win;
-            player2Win = previousState.Player2Win;
-            gameOver = previousState.GameOver;
+            // Undo second move
+            var secondState = MoveManager.Undo();
+            if (secondState == null)
+            {
+                Console.WriteLine("Cannot undo to before the game started.");
+                return false;
+            }
+
+            RestoreGameState(secondState);
+            player1Win = secondState.Player1Win;
+            player2Win = secondState.Player2Win;
+            gameOver = secondState.GameOver;
+            TurnNumber = secondState.TurnNumber;
 
             // Restore correct player
             CurrentPlayer = GetPlayerById(previousState.CurrentPlayerId);
@@ -297,7 +306,11 @@ namespace LineUpSeries
             // Restore correct player
             CurrentPlayer = GetPlayerById(nextState.CurrentPlayerId);
 
-            Console.WriteLine($"Redid one move. It's now Player {CurrentPlayer.playerId}'s turn.");
+            RestoreGameState(secondState);
+            player1Win = secondState.Player1Win;
+            player2Win = secondState.Player2Win;
+            gameOver = secondState.GameOver;
+            TurnNumber = secondState.TurnNumber;
             return true;
         }
 
@@ -336,6 +349,9 @@ namespace LineUpSeries
         {
             if (saveData == null)
                 throw new ArgumentNullException(nameof(saveData));
+
+            // Restore turnNumber which is important to spin game
+            TurnNumber = saveData.TurnNumber;
 
             // Restore players (they need to be recreated with correct types)
             Player1 = FileManager.ConvertDataToPlayer(saveData.Player1, WinRule);
