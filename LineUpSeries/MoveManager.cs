@@ -17,14 +17,11 @@ namespace LineUpSeries
         private Stack<GameStateSnapshot> _redoStack;
         private const int MAX_HISTORY = 100; // Prevent excessive memory usage
 
-        public int CurrentTurn { get; private set; }
-
         // Private constructor to prevent external instantiation
         private MoveManager()
         {
             _undoStack = new Stack<GameStateSnapshot>();
             _redoStack = new Stack<GameStateSnapshot>();
-            CurrentTurn = 0;
         }
 
         /// Gets the singleton instance of MoveManager
@@ -44,8 +41,6 @@ namespace LineUpSeries
         public void SaveState(GameStateSnapshot snapshot)
         {
             _undoStack.Push(snapshot);
-            CurrentTurn++;
-
             // Clear redo stack when a new move is made
             _redoStack.Clear();
 
@@ -81,7 +76,6 @@ namespace LineUpSeries
             // Pop the current state and push to redo stack
             var currentState = _undoStack.Pop();
             _redoStack.Push(currentState);
-            CurrentTurn--;
             // Return the previous state (now at top of undo stack)
             // If undo stack is empty, we're at the initial state
             if (_undoStack.Count > 0)
@@ -102,7 +96,6 @@ namespace LineUpSeries
 
             var state = _redoStack.Pop();
             _undoStack.Push(state);
-            CurrentTurn++;
             Console.WriteLine($"Pop current state from redo stack: playerID:{state.CurrentPlayerId}, turn: {state.TurnNumber}");
             var top = _undoStack.Peek();
             Console.WriteLine($"Pop current state from redo stack: playerID:{top.CurrentPlayerId}, turn: {top.TurnNumber}");
@@ -128,23 +121,17 @@ namespace LineUpSeries
         {
             _undoStack.Clear();
             _redoStack.Clear();
-            CurrentTurn = 0;
         }
 
-        /// Gets the undo stack for saving (returns a copy to prevent external modification)
+        /// Gets the undo stack for saving
         public Stack<GameStateSnapshot> GetUndoStackForSave()
         {
             return new Stack<GameStateSnapshot>(_undoStack);
         }
 
-        /// Gets the redo stack for saving (returns a copy to prevent external modification)
-        public Stack<GameStateSnapshot> GetRedoStackForSave()
-        {
-            return new Stack<GameStateSnapshot>(_redoStack);
-        }
 
         /// Restores the undo and redo stacks from saved data
-        public void RestoreStacks(List<GameStateSnapshot> undoList, List<GameStateSnapshot> redoList, int turnNumber)
+        public void RestoreStacks(List<GameStateSnapshot> undoList, int turnNumber)
         {
             _undoStack.Clear();
             _redoStack.Clear();
@@ -154,14 +141,6 @@ namespace LineUpSeries
             {
                 _undoStack.Push(snapshot);
             }
-
-            // Restore redo stack (reverse the list to get correct stack order)
-            foreach (var snapshot in redoList.AsEnumerable().Reverse())
-            {
-                _redoStack.Push(snapshot);
-            }
-
-            CurrentTurn = turnNumber;
         }
     }
 }

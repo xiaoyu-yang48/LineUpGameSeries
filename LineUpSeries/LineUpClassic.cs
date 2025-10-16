@@ -8,12 +8,9 @@ using System.Threading.Tasks;
 
 namespace LineUpSeries
 {
-    public sealed class LineUpClassic : Game
+    public class LineUpClassic : Game
     {
         public override string Name => "LineUpClassic";
-        private bool _gameOver;
-        private bool _player1Win;
-        private bool _player2Win;
         private readonly Random _random = new Random();
 
         public LineUpClassic(Board board, Player currentPlayer, IWinRule winRule, IAIStrategy aiSrategy) : base(board, currentPlayer, winRule, aiSrategy)
@@ -21,7 +18,7 @@ namespace LineUpSeries
         }
 
         //default constructor
-        public LineUpClassic() : base() 
+        public LineUpClassic() : base()
         {
         }
 
@@ -69,27 +66,11 @@ namespace LineUpSeries
                 }
             }
         }
-        static bool PromptVsMode()
-        {
-            while (true)
-            {
-                Console.WriteLine("1: human vs human");
-                Console.WriteLine("2: human vs computer");
-                Console.WriteLine("Choose palyer mode:");
-
-                var mode = Console.ReadLine();
-                if (mode == null) return false;
-                mode = mode.Trim();
-                if (mode == "1") return false;
-                if (mode == "2") return true;
-                Console.WriteLine("Invalid input");
-            }
-        }
 
         private static (int rows, int cols) PromptBoardSize()
         {
-            const int minRows = 8;
-            const int minCols = 9;
+            const int minRows = 6;
+            const int minCols = 7;
             int rows = 0;
             int cols = 0;
 
@@ -166,7 +147,7 @@ namespace LineUpSeries
             }
             int col;
             DiscKind kind;
-            if (!PromptHumanMove(out col, out kind))
+            if (!PromptHumanMove(out col, out kind, out _))
             {
                 _gameOver = true;
                 return;
@@ -174,240 +155,11 @@ namespace LineUpSeries
             ApplyMove(col, kind);
         }
 
-        private void ApplyMove(int col, DiscKind kindToUse)
-        {
-            if (!_player1Win && !_player2Win && Board.IsFull())
-            {
-                _gameOver = true;
-                return;
-            }
-
-            if (!Board.IsColumnLegal(col))
-            {
-                Console.WriteLine("Column is full or illegal, please try again.");
-                return;
-            }
-
-
-            // Check if player has the disc kind before consuming
-            if (!CurrentPlayer.CanUse(kindToUse))
-            {
-                Console.WriteLine("Insufficient disc type. Please choose another disc kind.");
-                return;
-            }
-
-            // Consume the disc first
-            if (!CurrentPlayer.TryConsume(kindToUse))
-            {
-                Console.WriteLine("Failed to consume disc.");
-                return;
-            }
-
-            // Create and place the disc
-            var disc = DiscFactory.Create(kindToUse, CurrentPlayer);
-            var move = new PlaceDiscMove(col, disc);
-            move.Execute(Board);
-            if (!move.WasPlaced)
-            {
-                Console.WriteLine("Failed to place a disc. Please retry.");
-                // Return the disc back to inventory since placement failed
-                CurrentPlayer.AddStock(kindToUse, 1);
-                return;
-            }
-
-            //wincheck
-            var rule = (WinRule as ConnectWinRule) ?? new ConnectWinRule(WinLen);
-            var change = move.ChangeCells;
-            if (change == null)
-            {
-                return;
-            }
-            rule.WinCheck(Board, change, out _player1Win, out _player2Win);
-
-            if (_player1Win || _player2Win || Board.IsFull())
-            {
-                _gameOver = true;
-                return;
-            }
-
-            SwitchPlayer();
-            // Save state AFTER executing move and switching player
-            var snapshot = CaptureGameState(_player1Win, _player2Win, _gameOver);
-            MoveManager.SaveState(snapshot);
-        }
-
-
-        private void PrintBoard()
-        {
-            int rows = Board.Rows;
-            int cols = Board.Cols;
-
-            for (int r = rows - 1; r >= 0; r--)
-            {
-                for (int c = 0; c < cols; c++)
-                {
-                    char discSymbol;
-
-                    Cell cell = Board.GetCell(r, c);
-                    var disc = cell.Disc;
-                    if (disc != null)
-                    {
-                        DiscKind kind = disc.Kind;
-                        int owner = disc.PlayerId;
-
-                        discSymbol = (owner, kind) switch
-                        {
-                            (1, DiscKind.Ordinary) => '@',
-                            (1, DiscKind.Boring) => 'B',
-                            (1, DiscKind.Magnetic) => 'M',
-                            (1, DiscKind.Explosive) => 'E',
-                            (2, DiscKind.Ordinary) => '#',
-                            (2, DiscKind.Boring) => 'b',
-                            (2, DiscKind.Magnetic) => 'm',
-                            (2, DiscKind.Explosive) => 'e',
-                        };
-                    }
-
-                    else discSymbol = ' ';
-
-
-                    Console.Write($"|{discSymbol}");
-                }
-                Console.WriteLine("|");
-            }
-            for (int c = 1; c <= cols; c++)
-            {
-                Console.Write($" {c}");
-            }
-            Console.WriteLine();
-        }
-
-        private void PrintInventory(Player p)
-        {
-            Console.WriteLine($"stock P{p.playerId}: Ordinary = {p.Inventory[DiscKind.Ordinary]}, Boring = {p.Inventory[DiscKind.Boring]}, Magnetic = {p.Inventory[DiscKind.Magnetic]}, Explosive = {p.Inventory[DiscKind.Explosive]}");
-        }
-
-        private bool PromptHumanMove(out int col, out DiscKind kind)
-        {
-            col = -1;
-            kind = DiscKind.Ordinary;
-
-            while (true)
-            {
-                PrintBoard();
-                PrintInventory(CurrentPlayer);
-                Console.WriteLine("Enter your move: e.g., 1B for BoringDisc in Column 1");
-                Console.WriteLine("Commands: Q: quit, H: help, Undo: undo, Redo: redo, Save: save game, Load: load game");
-                var line = Console.ReadLine();
-                if (string.Equals(line, "q", StringComparison.OrdinalIgnoreCase)) return false;
-                if (string.Equals(line, "h", StringComparison.OrdinalIgnoreCase)) { PrintHelp(); continue; }
-
-                // Handle undo
-                if (string.Equals(line, "undo", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (PerformUndo(out _player1Win, out _player2Win, out _gameOver))
-                    {
-                        return true; // Exit to let game loop continue with restored player
-                    }
-                    continue;
-                }
-
-                // Handle redo
-                if (string.Equals(line, "redo", StringComparison.OrdinalIgnoreCase))
-                {
-                    if (PerformRedo(out _player1Win, out _player2Win, out _gameOver))
-                    {
-                        return true; // Exit to let game loop continue with restored player
-                    }
-                    continue;
-                }
-
-                // Handle save
-                if (string.Equals(line, "save", StringComparison.OrdinalIgnoreCase))
-                {
-                    Console.Write("Enter filename to save (default: savegame.json): ");
-                    string? filename = Console.ReadLine()?.Trim();
-                    if (string.IsNullOrWhiteSpace(filename))
-                        filename = "savegame.json";
-
-                    try
-                    {
-                        FileManager.SaveGame(filename, this);
-                        Console.WriteLine($"Game saved successfully to {filename}");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Failed to save game: {ex.Message}");
-                    }
-                    continue;
-                }
-
-                // Handle load
-                if (string.Equals(line, "load", StringComparison.OrdinalIgnoreCase))
-                {
-                    Console.Write("Enter filename to load (default: savegame.json): ");
-                    string? filename = Console.ReadLine()?.Trim();
-                    if (string.IsNullOrWhiteSpace(filename))
-                        filename = "savegame.json";
-
-                    try
-                    {
-                        var saveData = FileManager.LoadGame(filename);
-                        RestoreFromSaveData(saveData);
-                        Console.WriteLine($"Game loaded successfully from {filename}");
-                        return true; // Exit to let game loop continue with restored state
-                    }
-                    catch (System.IO.FileNotFoundException)
-                    {
-                        Console.WriteLine($"Save file not found: {filename}");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Failed to load game: {ex.Message}");
-                    }
-                    continue;
-                }
-
-                if (string.IsNullOrWhiteSpace(line)) { Console.WriteLine("Empty input"); continue;}
-
-                line = line.Trim();
-
-                char last = line[line.Length - 1];
-                if (!char.IsLetter(last)) { Console.WriteLine("Wrong format"); continue; }
-                string numPart = line.Substring(0, line.Length - 1);
-                if (!int.TryParse(numPart, out int colInput)) { Console.WriteLine("Invalid column number"); continue; }
-
-                int promptCol = colInput - 1;
-                if (promptCol < 0 || promptCol >= Board.Cols) { Console.WriteLine("Column number out of range"); continue; }
-
-                char kindch = char.ToUpperInvariant(last);
-                kind = kindch switch
-                {
-                    'O' => DiscKind.Ordinary,
-                    'B' => DiscKind.Boring,
-                    'M' => DiscKind.Magnetic,
-                    'E' => DiscKind.Explosive,
-                    _ => DiscKind.Ordinary
-                };
-
-                col = promptCol;
-                return true;
-            }
-        }
-
-        protected override void DisplayGameResult()
-        {
-            PrintBoard();
-            Console.WriteLine("Game Over");
-            if (_player1Win || _player2Win) WinResult(_player1Win, _player2Win);
-            else Console.WriteLine("Draw End");
-        }
-
-        private void AllocateInitialStockByBoardSize()
+        protected virtual void AllocateInitialStockByBoardSize()
         {
             int totalCells = Board.Rows * Board.Cols;
             int perPlayer = totalCells / 2;
-            var specials = new List<DiscKind> { DiscKind.Boring, DiscKind.Magnetic, DiscKind.Explosive};
+            var specials = new List<DiscKind> { DiscKind.Boring, DiscKind.Magnetic, DiscKind.Explosive };
 
             var p1s1 = specials[_random.Next(specials.Count)];
             DiscKind p1s2;

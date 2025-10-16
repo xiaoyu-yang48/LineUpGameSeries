@@ -25,11 +25,11 @@ namespace LineUpSeries
                 {
                     GameName = game.Name,
                     WinLen = game.WinLen,
+                    TurnNumber = game.TurnNumber,
                     CurrentState = ConvertSnapshotToData(game.CaptureCurrentSnapshot()),
                     Player1 = ConvertPlayerToData(game.Player1),
                     Player2 = ConvertPlayerToData(game.Player2),
                     UndoStack = ConvertStackToDataList(game.GetUndoStack()),
-                    RedoStack = ConvertStackToDataList(game.GetRedoStack())
                 };
 
                 string jsonString = JsonSerializer.Serialize(saveData, JsonOptions);
@@ -96,10 +96,10 @@ namespace LineUpSeries
                 Board = ConvertBoardToData(snapshot.BoardClone),
                 PlayerInventories = new Dictionary<int, Dictionary<DiscKind, int>>(snapshot.PlayerInventories),
                 CurrentPlayerId = snapshot.CurrentPlayerId,
-                TurnNumber = snapshot.TurnNumber,
                 Player1Win = snapshot.Player1Win,
                 Player2Win = snapshot.Player2Win,
-                GameOver = snapshot.GameOver
+                GameOver = snapshot.GameOver,
+                TurnNumber = snapshot.TurnNumber
             };
         }
 
