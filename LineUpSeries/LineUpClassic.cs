@@ -55,9 +55,8 @@ namespace LineUpSeries
                     game.InitializeGameloop();
                     game.StartGameLoop();
 
-                    Console.WriteLine("Enter q to quit");
-                    var cont = Console.ReadLine();
-                    if (string.Equals(cont, "q", StringComparison.OrdinalIgnoreCase)) return;
+                    Console.WriteLine("Press Enter to continue...");
+                    Console.ReadLine();
                 }
                 else
                 {
