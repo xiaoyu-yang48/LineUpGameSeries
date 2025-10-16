@@ -251,23 +251,15 @@ namespace LineUpSeries
             var previousState = MoveManager.Undo();
             if (previousState == null)
             {
-                Console.WriteLine("Cannot undo to before the game started.");
+                Console.WriteLine("Cannot undo further");
                 return false;
             }
 
-            // Undo second move
-            var secondState = MoveManager.Undo();
-            if (secondState == null)
-            {
-                Console.WriteLine("Cannot undo to before the game started.");
-                return false;
-            }
-
-            RestoreGameState(secondState);
-            player1Win = secondState.Player1Win;
-            player2Win = secondState.Player2Win;
-            gameOver = secondState.GameOver;
-            TurnNumber = secondState.TurnNumber;
+            RestoreGameState(previousState);
+            player1Win = previousState.Player1Win;
+            player2Win = previousState.Player2Win;
+            gameOver = previousState.GameOver;
+            TurnNumber = previousState.TurnNumber;
 
             // Restore correct player
             CurrentPlayer = GetPlayerById(previousState.CurrentPlayerId);
@@ -306,11 +298,7 @@ namespace LineUpSeries
             // Restore correct player
             CurrentPlayer = GetPlayerById(nextState.CurrentPlayerId);
 
-            RestoreGameState(secondState);
-            player1Win = secondState.Player1Win;
-            player2Win = secondState.Player2Win;
-            gameOver = secondState.GameOver;
-            TurnNumber = secondState.TurnNumber;
+            Console.WriteLine($"Redid one move. It's now Player {CurrentPlayer.playerId}'s turn.");
             return true;
         }
 
