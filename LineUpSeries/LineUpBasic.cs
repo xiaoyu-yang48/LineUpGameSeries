@@ -40,6 +40,7 @@ namespace LineUpSeries
                     // Fixed board size: 8 x 9 for LineUpBasic
                     var board = new Board(8, 9);
                     var rule = new ConnectWinRule(4);
+                    rule.SetWinLen(board);
                     var ai = new ImmeWinElseRandom(rule, 2);
 
                     var player1 = new HumanPlayer(1);
